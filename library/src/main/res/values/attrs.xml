@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="stackview">
+        <attr name="stackSpace" format="dimension" />
+        <attr name="stackZoom" format="float" />
+        <attr name="stackExtendTotal" format="float" />
+        <attr name="stackLooper" format="boolean"/>
+        <attr name="stackSize" format="integer"/>
+        <attr name="stackEdge" format="dimension" />
+        <attr name="stackEdgeModel">
+            <flag name="left" value="1"/>
+            <flag name="right" value="2"/>
+        </attr>
+    </declare-styleable>
+</resources>
