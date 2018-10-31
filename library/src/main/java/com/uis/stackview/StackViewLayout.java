@@ -3,6 +3,7 @@ package com.uis.stackview;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -54,6 +55,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     private static final int MODE_IDLE = 0;
     private static final int MODE_HORIZONTAL = 1;
     private static final int MODE_VERTICAL = 2;
+    //速度阀值
     private static final int VELOCITY_THRESHOLD = 200;
     private int scrollMode;
     private int downX, downY;
@@ -97,7 +99,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     @Override
     public void onClick(View v) {
         if (null != adapter) {
-            int position = offsetIndex + 2;
+            int position = offsetIndex;
             if (position >= 0 && position < adapter.getItemCount()) {
                 adapter.onItemClick(((FrameLayout) v).getChildAt(0), position);
             }
@@ -113,29 +115,32 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        Log.e("xx","onMeasure....");
         //计算宽度，高度设置为宽度的比例
         int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec) ?
                 width/2 + getPaddingTop() + getPaddingBottom() : getDefaultSize(getSuggestedMinimumHeight(),heightMeasureSpec);
         setMeasuredDimension(width,height);
-        if(adapter != null && adapter.getItemCount() > 0){
+        if(adapter != null && adapter.getItemCount() > 0 && originX.isEmpty()){
             int realSize = getRealStackSize();
-            everyWidth = (int) ((width - getPaddingLeft() - getPaddingRight() - stackSpace *(realSize-1) - 2*stackEdge) );
+            everyWidth = width - getPaddingLeft() - getPaddingRight() - stackSpace *(realSize-1) - 2*stackEdge;
             everyHeight = height;
-            originX.clear();
             originX.add(stackEdge);
             originX.add(stackEdge);
             for(int i = 1; i < realSize; i++){
                 originX.add(originX.get(i) + stackSpace);
             }
-            originX.add(width);
+            originX.add(width-1);
         }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        Log.e("xx","onLayout....");
         for (int i = 0,size = getChildCount(); i < size; i++) {
             View itemView = getChildAt(i);
+            itemView.measure(everyWidth,everyHeight);
+
             int x = originX.get(i);
             int left,right,pivot;
             if(stackEdgeModel == 1) {
@@ -143,15 +148,15 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
                 right = everyWidth + x;
                 pivot = stackEdge;
             }else{
-                right = getMeasuredWidth() - x;
+                right = getWidth() - x;
                 left = right - everyWidth;
-                pivot = getMeasuredWidth() - stackEdge;
+                pivot = getWidth() - stackEdge;
             }
             int top = 0;
             int bottom = top + everyHeight;
-            itemView.layout(left, top, right, bottom);
             itemView.setPivotX(pivot);
             itemView.setPivotY(everyHeight / 2);
+            itemView.layout(left, top, right, bottom);
             if(i < size - 2) {
                 adjustScale(i,itemView);
             }
@@ -163,24 +168,19 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     }
 
     private void initAdapterView(){
+        Log.e("xx","initAdapterview start....");
         if (adapter != null && getChildCount() == 0 && adapter.getItemCount() > 0) {
             hasSetAdapter = true;
             LayoutInflater inflater = LayoutInflater.from(getContext());
             for (int i = 0,size = getRealStackSize() + 2; i < size; i++) {
                 FrameLayout frameLayout = new FrameLayout(getContext());
                 View view = inflater.inflate(adapter.getLayoutId(), null);
-                FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-                lp1.width = everyWidth;
-                lp1.height = everyHeight;
+                FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(everyWidth, everyHeight);
                 frameLayout.addView(view, lp1);
-                LayoutParams lp2 = new LayoutParams(everyWidth, everyHeight);
-                lp2.width = everyWidth;
-                lp2.height = everyHeight;
-                frameLayout.setLayoutParams(lp2);
                 frameLayout.setOnClickListener(this);
                 addView(frameLayout);
-                frameLayout.measure(everyWidth, everyHeight);
             }
+
         }
     }
 
@@ -195,6 +195,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
      * 绑定Adapter
      */
     public void setAdapter(StackViewAdapter adapter) {
+        Log.e("xx","setAdapter....");
         this.adapter = adapter;
         // ViewdoBindAdapter尚未渲染出来的时候，不做适配
         if ( everyWidth > 0 && everyHeight > 0) {
@@ -209,54 +210,31 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     private void doBindAdapter() {
         if(adapter != null && !hasSetAdapter){
             initAdapterView();
-            int size = getRealStackSize();
-            int count = adapter.getItemCount();
-            FrameLayout frameLayout = (FrameLayout) getChildAt(0);
-            adapter.bindView(frameLayout.getChildAt(0),getViewIndex(0,0) );//count > size ? size : count-1
-            for (int i = 0; i < size + 2; i++) {
-                frameLayout = (FrameLayout) getChildAt(i+1);
-                adapter.bindView(frameLayout.getChildAt(0),);//size-1-i
-            }
-            frameLayout = (FrameLayout) getChildAt(size+1);
-            adapter.bindView(frameLayout.getChildAt(0), getViewIndex(0,size+1));//count-1
+            doBindAdapterData();
         }
     }
 
-    private int getRealIndex(int index){
+    private void doBindAdapterData(){
         int size = getRealStackSize();
+        FrameLayout frameLayout;
+        for (int i = 0; i < size + 2; i++) {
+            frameLayout = (FrameLayout) getChildAt(i);
+            adapter.bindView(frameLayout.getChildAt(0),getRealIndex(size,i));//size-1-i
+            //Log.e("xx","doBind....");
+        }
+    }
+
+    private int getRealIndex(int size,int index){
         int count = adapter.getItemCount();
-        int real = 0;
-        //底层
-        if(0 == index){
+        int real;
+        if(0 == index){//底层
+            real = count > size ? size : 0;
+        }else if(size+1 == index){//顶层
             real = count - 1;
-        //顶层
-        }else if(size+1 == index){
-            real = count - 1;
-        //中间层
-        }else{
-            real = size - index + offsetIndex ;
+        }else{//中间层
+            real = size - index;
         }
         return real;
-    }
-
-    /**
-     *
-     * @param type 1 ->left, 0 ->init, 2 ->right
-     * @return
-     */
-    private int getViewIndex(int type,int index){
-        int viewIndex = 0;
-        switch (type){
-            case 1:
-                offsetIndex -= 1;
-                break;
-            case 2:
-                offsetIndex += 1;
-                break;
-            default:
-
-        }
-
     }
 
     @Override
@@ -272,13 +250,10 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
                 if (null != animator) {
                     animator.cancel();
                 }
-
                 initVelocityTrackerIfNotExists();
                 mVelocityTracker.addMovement(event);
                 animatingView = null;
-
                 break;
-
             case MotionEvent.ACTION_MOVE:
                 if (scrollMode == MODE_IDLE) {
                     float xDistance = Math.abs(downX - event.getX());
@@ -293,12 +268,11 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
                     }
                 }
                 break;
-
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
                 recycleVelocityTracker();
                 // ACTION_UP还能拦截，说明手指没滑动，只是一个click事件，同样需要snap到特定位置
-                onRelease(event.getX(), 0);
+                //onRelease(event.getX(), 0);
                 break;
                 default:
         }
@@ -310,10 +284,6 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         mVelocityTracker.addMovement(event);
         int action = event.getActionMasked();
         switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                // 此处说明底层没有子View愿意消费Touch事件
-                break;
-
             case MotionEvent.ACTION_MOVE:
                 int currentX = (int) event.getX();
                 int dx = (int) (currentX - lastX);
@@ -328,7 +298,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
                 int velocity = (int) velocityTracker.getXVelocity();
                 recycleVelocityTracker();
 
-                onRelease(event.getX(), velocity);
+                //onRelease(event.getX(), velocity);
                 break;
             default:
         }
@@ -336,107 +306,22 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     }
 
     private void onRelease(float eventX, int velocityX) {
-        animatingView = (FrameLayout) getChildAt(3);
-        animateValue = animatingView.getLeft();
-        int tag = Integer.parseInt(animatingView.getTag().toString());
 
-        // 计算目标位置
-        int destX = originX.get(3);
-        if (velocityX > VELOCITY_THRESHOLD || (animatingView.getLeft() > originX.get(3) + scrollDistanceMax / 2 && velocityX > -VELOCITY_THRESHOLD)) {
-            destX = originX.get(4);
-            tag--;
-        }
-        if (tag < 0 || tag >= adapter.getItemCount()) {
-            return;
-        }
-
-        if (Math.abs(animatingView.getLeft() - destX) < mTouchSlop && Math.abs(eventX - downX) < mTouchSlop) {
-            return;
-        }
-
-        adapter.displaying(tag);
-        animator = ObjectAnimator.ofFloat(this, "animateValue", animatingView.getLeft(), destX);
-        animator.setInterpolator(interpolator);
-        animator.setDuration(300).start();
+//        animator = ObjectAnimator.ofFloat(this, "animateValue", animatingView.getLeft(), 0);
+//        animator.setInterpolator(interpolator);
+//        animator.setDuration(300).start();
     }
 
     private void requireScrollChange(int dx) {
-        if (dx == 0) {
+        if(getChildCount() == 0){
             return;
         }
-        int currentPosition = Integer.parseInt(getChildAt(3).getTag().toString());
-        if (dx < 0 && currentPosition >= adapter.getItemCount()) {
-            return;
-        } else if (dx > 0) {
-            if (currentPosition <= 0) {
-                return;
-            } else if (currentPosition == 1) {
-                if (getChildAt(3).getLeft() + dx >= originX.get(4)) {
-                    dx = originX.get(4) - getChildAt(3).getLeft();
-                }
-            }
-        }
-        int num = getChildCount();
-        // 1. View循环复用
-        FrameLayout firstView = (FrameLayout) getChildAt(0);
-        if (dx > 0 && firstView.getLeft() >= originX.get(1)) {
-            // 向右滑动，从左边把View补上
-            FrameLayout lastView = (FrameLayout) getChildAt(getChildCount() - 1);
-
-            LayoutParams lp = lastView.getLayoutParams();
-            removeViewInLayout(lastView);
-            addViewInLayout(lastView, 0, lp);
-
-            int tag = Integer.parseInt(lastView.getTag().toString());
-            tag -= num;
-            lastView.setTag(tag);
-            if (tag < 0) {
-                lastView.setVisibility(View.INVISIBLE);
-            } else {
-                lastView.setVisibility(View.VISIBLE);
-                adapter.bindView(lastView.getChildAt(0), tag);
-            }
-        } else if (dx < 0 && firstView.getLeft() <= originX.get(0)) {
-            // 向左滑动，从右边把View补上
-            LayoutParams lp = firstView.getLayoutParams();
-            removeViewInLayout(firstView);
-            addViewInLayout(firstView, -1, lp);
-            int tag = Integer.parseInt(firstView.getTag().toString());
-            tag += num;
-            firstView.setTag(tag);
-            if (tag >= adapter.getItemCount()) {
-                firstView.setVisibility(View.INVISIBLE);
-            } else {
-                firstView.setVisibility(View.VISIBLE);
-                adapter.bindView(firstView.getChildAt(0), tag);
-            }
-        }
-
-        // 2. 位置修正
-        View view3 = getChildAt(3);
-        float rate = (float) ((view3.getLeft() + dx) - originX.get(3)) / scrollDistanceMax;
-        if (rate < 0) {
-            rate = 0;
-        }
-        int position1 = Math.round(rate * (originX.get(2) - originX.get(1))) + originX.get(1);
-        boolean endAnim = false;
-        if (position1 >= originX.get(2) && null != animatingView) {
-            animator.cancel();
-            endAnim = true;
-        }
-        for (int i = 0; i < num; i++) {
+        //dx<0 left, dx>0 right
+        for (int i = 0,size = 2 + getRealStackSize(); i < size; i++) {
+            Log.e("x",size+",position="+i+",dx="+dx);
             View itemView = getChildAt(i);
-            if (endAnim) {
-                itemView.offsetLeftAndRight(originX.get(i + 1) - itemView.getLeft());
-            } else if (itemView == animatingView) {
-                itemView.offsetLeftAndRight(dx);
-            } else {
-                int position = Math.round(rate * (originX.get(i + 1) - originX.get(i))) + originX.get(i);
-                if (i + 1 < originX.size() && position >= originX.get(i + 1)) {
-                    position = originX.get(i + 1);
-                }
-                itemView.offsetLeftAndRight(position - itemView.getLeft());
-            }
+            itemView.offsetLeftAndRight(dx);
+            //adapter.bindView(itemView,getRealIndex(size-2,i));
         }
     }
 

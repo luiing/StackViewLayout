@@ -1,6 +1,7 @@
 package com.stone.pile.activity;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
 import com.stone.pile.R;
 import com.stone.pile.entity.ItemEntity;
 import com.uis.stackview.StackViewLayout;
@@ -46,7 +48,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 20;
+        return 3;
     }
 
     private ArrayList<ItemEntity> initDataList(Context context) {
@@ -99,10 +101,10 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
                     ViewHolder viewHolder = (ViewHolder) view.getTag();
                     if (viewHolder == null) {
                         viewHolder = new ViewHolder();
-                        viewHolder.imageView = (ImageView) view.findViewById(R.id.imageView);
+                        viewHolder.imageView = view.findViewById(R.id.imageView);
                         view.setTag(viewHolder);
                     }
-
+                    //Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
                     Glide.with(itemView.getContext())
                             .load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
                 }
