@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.uis.stackview.StackViewLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:stack="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/stacklayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    stack:stackSpace="15dp"
+    stack:stackEdge="20dp"
+    stack:stackZoom="0.08"
+    stack:stackLooper = "true"
+    stack:stackSize = "3"
+    stack:stackEdgeModel = "right">
+</com.uis.stackview.StackViewLayout>

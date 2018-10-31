@@ -3,7 +3,6 @@
     <declare-styleable name="stackview">
         <attr name="stackSpace" format="dimension" />
         <attr name="stackZoom" format="float" />
-        <attr name="stackExtendTotal" format="float" />
         <attr name="stackLooper" format="boolean"/>
         <attr name="stackSize" format="integer"/>
         <attr name="stackEdge" format="dimension" />
