@@ -37,7 +37,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     /** 层叠缩放比例 */
     private float stackZoom = 0.2f;
      /** 显示数量 */
-    private float stackExendTotal = 1.f;
+
     /** 层叠显示数量 */
     private int stackSize = 3;
     private boolean stackLooper = false;
@@ -46,9 +46,9 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     private int everyWidth;
     private int everyHeight;
-    /** 滑动参考值 */
-    private int scrollDistanceMax;
-    private List<Integer> originX = new ArrayList<>(); // 存放的是最初的七个View的位置
+    private int offsetIndex = 0;
+
+    private List<Integer> originX = new ArrayList<>();
 
     // 拖拽相关
     private static final int MODE_IDLE = 0;
@@ -58,7 +58,8 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     private int scrollMode;
     private int downX, downY;
     private float lastX;
-    private final int mTouchSlop; // 判定为滑动的阈值，单位是像素
+    // 判定为滑动的阈值，单位是像素
+    private final int mTouchSlop;
 
     private float animateValue;
     private ObjectAnimator animator;
@@ -81,9 +82,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         TypedArray type = context.obtainStyledAttributes(attrs, R.styleable.stackview);
         stackSpace =  (int)type.getDimension(R.styleable.stackview_stackSpace, stackSpace);
         stackEdge = (int)type.getDimension(R.styleable.stackview_stackEdge,stackEdge);
-
         stackZoom = type.getFloat(R.styleable.stackview_stackZoom, stackZoom);
-        stackExendTotal = type.getFloat(R.styleable.stackview_stackExtendTotal, stackExendTotal);
         stackSize = type.getInteger(R.styleable.stackview_stackSize,stackSize);
         stackLooper = type.getBoolean(R.styleable.stackview_stackLooper,stackLooper);
         stackEdgeModel = type.getInteger(R.styleable.stackview_stackEdgeModel,stackEdgeModel);
@@ -98,7 +97,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     @Override
     public void onClick(View v) {
         if (null != adapter) {
-            int position = Integer.parseInt(v.getTag().toString());
+            int position = offsetIndex + 2;
             if (position >= 0 && position < adapter.getItemCount()) {
                 adapter.onItemClick(((FrameLayout) v).getChildAt(0), position);
             }
@@ -107,7 +106,6 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     @Override
     public void onGlobalLayout() {
-        Log.e("xx","global layout...");
         if (getHeight() > 0 && null != adapter && !hasSetAdapter) {
             setAdapter(adapter);
         }
@@ -115,8 +113,6 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.e("xx","onMeasuere......");
-
         //计算宽度，高度设置为宽度的比例
         int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec) ?
@@ -124,7 +120,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         setMeasuredDimension(width,height);
         if(adapter != null && adapter.getItemCount() > 0){
             int realSize = getRealStackSize();
-            everyWidth = (int) ((width - getPaddingLeft() - getPaddingRight() - stackSpace *(realSize-1) - 2*stackEdge) / stackExendTotal);
+            everyWidth = (int) ((width - getPaddingLeft() - getPaddingRight() - stackSpace *(realSize-1) - 2*stackEdge) );
             everyHeight = height;
             originX.clear();
             originX.add(stackEdge);
@@ -138,7 +134,6 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        Log.e("xx","onLayout.....");
         for (int i = 0,size = getChildCount(); i < size; i++) {
             View itemView = getChildAt(i);
             int x = originX.get(i);
@@ -150,9 +145,8 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
             }else{
                 right = getMeasuredWidth() - x;
                 left = right - everyWidth;
-                pivot = getMeasuredWidth() - stackEdge;//getMeasuredWidth();
+                pivot = getMeasuredWidth() - stackEdge;
             }
-            Log.e("xx","left="+left+",right="+right);
             int top = 0;
             int bottom = top + everyHeight;
             itemView.layout(left, top, right, bottom);
@@ -172,8 +166,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         if (adapter != null && getChildCount() == 0 && adapter.getItemCount() > 0) {
             hasSetAdapter = true;
             LayoutInflater inflater = LayoutInflater.from(getContext());
-            Log.e("xx","size="+getRealStackSize());
-            for (int i = 0,size = getRealStackSize()+2; i < size; i++) {
+            for (int i = 0,size = getRealStackSize() + 2; i < size; i++) {
                 FrameLayout frameLayout = new FrameLayout(getContext());
                 View view = inflater.inflate(adapter.getLayoutId(), null);
                 FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
@@ -192,10 +185,78 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     }
 
     private void adjustScale(int index,View itemView) {
-        int rate = getRealStackSize() - (index <= 1 ? 1: index);//0,1,2
+        int rate = getRealStackSize() - (index <= 1 ? 1: index);
         float scale = (float) Math.pow(1.0f - stackZoom,rate);
         itemView.setScaleX(1.0f - stackZoom);
         itemView.setScaleY(scale);
+    }
+
+    /**
+     * 绑定Adapter
+     */
+    public void setAdapter(StackViewAdapter adapter) {
+        this.adapter = adapter;
+        // ViewdoBindAdapter尚未渲染出来的时候，不做适配
+        if ( everyWidth > 0 && everyHeight > 0) {
+            doBindAdapter();
+        }
+    }
+
+
+    /**
+     * 真正绑定Adapter
+     */
+    private void doBindAdapter() {
+        if(adapter != null && !hasSetAdapter){
+            initAdapterView();
+            int size = getRealStackSize();
+            int count = adapter.getItemCount();
+            FrameLayout frameLayout = (FrameLayout) getChildAt(0);
+            adapter.bindView(frameLayout.getChildAt(0),getViewIndex(0,0) );//count > size ? size : count-1
+            for (int i = 0; i < size + 2; i++) {
+                frameLayout = (FrameLayout) getChildAt(i+1);
+                adapter.bindView(frameLayout.getChildAt(0),);//size-1-i
+            }
+            frameLayout = (FrameLayout) getChildAt(size+1);
+            adapter.bindView(frameLayout.getChildAt(0), getViewIndex(0,size+1));//count-1
+        }
+    }
+
+    private int getRealIndex(int index){
+        int size = getRealStackSize();
+        int count = adapter.getItemCount();
+        int real = 0;
+        //底层
+        if(0 == index){
+            real = count - 1;
+        //顶层
+        }else if(size+1 == index){
+            real = count - 1;
+        //中间层
+        }else{
+            real = size - index + offsetIndex ;
+        }
+        return real;
+    }
+
+    /**
+     *
+     * @param type 1 ->left, 0 ->init, 2 ->right
+     * @return
+     */
+    private int getViewIndex(int type,int index){
+        int viewIndex = 0;
+        switch (type){
+            case 1:
+                offsetIndex -= 1;
+                break;
+            case 2:
+                offsetIndex += 1;
+                break;
+            default:
+
+        }
+
     }
 
     @Override
@@ -241,7 +302,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
                 break;
                 default:
         }
-        return super.onInterceptTouchEvent(event); // 默认都是不拦截的
+        return super.onInterceptTouchEvent(event);
     }
 
     @Override
@@ -376,65 +437,6 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
                 }
                 itemView.offsetLeftAndRight(position - itemView.getLeft());
             }
-            //adjustAlpha(itemView); // 调整透明度
-            //adjustScale(itemView); // 调整缩放
-        }
-    }
-
-    /**
-     * 绑定Adapter
-     */
-    public void setAdapter(StackViewAdapter adapter) {
-        this.adapter = adapter;
-        // ViewdoBindAdapter尚未渲染出来的时候，不做适配
-        if ( everyWidth > 0 && everyHeight > 0) {
-            doBindAdapter();
-        }else{
-            Log.e("xx","setAdapter ....");
-        }
-    }
-
-
-    /**
-     * 真正绑定Adapter
-     */
-    private void doBindAdapter() {
-        if(adapter == null || hasSetAdapter){
-            return;
-        }
-
-        initAdapterView();
-        Log.e("xx","bindAdapter ...."+getChildCount());
-
-        int size = getRealStackSize();
-        int count = adapter.getItemCount();
-        FrameLayout frameLayout = (FrameLayout) getChildAt(0);
-        adapter.bindView(frameLayout.getChildAt(0), count > size ? size : count-1);
-        for (int i = 0 ; i < size; i++) {
-            frameLayout = (FrameLayout) getChildAt(i+1);
-            adapter.bindView(frameLayout.getChildAt(0), size-1-i);
-        }
-        frameLayout = (FrameLayout) getChildAt(size+1);
-        adapter.bindView(frameLayout.getChildAt(0), count-1);
-    }
-
-    /**
-     * 数据更新通知
-     */
-    public void notifyDataSetChanged() {
-        int num = getChildCount();
-        for (int i = 0; i < num; i++) {
-            FrameLayout frameLayout = (FrameLayout) getChildAt(i);
-            int tag = Integer.parseInt(frameLayout.getTag().toString());
-            if (tag > 0 && tag < adapter.getItemCount()) {
-                frameLayout.setVisibility(View.VISIBLE);
-                adapter.bindView(frameLayout.getChildAt(0), tag);
-            } else {
-                frameLayout.setVisibility(View.INVISIBLE);
-            }
-            if (i == 3 && tag == 0) {
-                adapter.displaying(0);
-            }
         }
     }
 
@@ -463,7 +465,8 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
      * 属性动画，请勿删除
      */
     public void setAnimateValue(float animateValue) {
-        this.animateValue = animateValue; // 当前应该在的位置
+        // 当前应该在的位置
+        this.animateValue = animateValue;
         int dx = Math.round(animateValue - animatingView.getLeft());
         requireScrollChange(dx);
     }
