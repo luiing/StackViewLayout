@@ -1,7 +1,6 @@
-package com.stone.pile.activity;
+package com.uis.stackview.demo.activity;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,10 +8,9 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.google.gson.Gson;
-import com.stone.pile.R;
-import com.stone.pile.entity.ItemEntity;
-import com.uis.stackview.StackViewLayout;
+import com.uis.stackview.demo.R;
+import com.uis.stackview.demo.entity.ItemEntity;
+import com.uis.stackview.StackLayout;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,10 +46,10 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 3;
+        return 1;
     }
 
-    private ArrayList<ItemEntity> initDataList(Context context) {
+    public static ArrayList<ItemEntity> initDataList(Context context) {
         ArrayList<ItemEntity> dataList = new ArrayList<ItemEntity>();
         try {
             InputStream in = context.getAssets().open("preset.config");
@@ -77,12 +75,12 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
         return dataList;
     }
 
-    static class ViewHolder {
+    public static class ViewHolder {
         ImageView imageView;
     }
 
     static class StackVH extends RecyclerView.ViewHolder{
-        StackViewLayout stackLayout;
+        StackLayout stackLayout;
         public StackVH(boolean left,ViewGroup parent) {
             super(LayoutInflater.from(parent.getContext()).inflate(
                     left ? R.layout.stack_left : R.layout.stack_right,parent,false));
@@ -90,14 +88,15 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
         }
 
         public void binderVH(final ArrayList<ItemEntity> dataList){
-            stackLayout.setAdapter(new StackViewLayout.StackViewAdapter() {
+            stackLayout.setAdapter(new StackLayout.StackAdapter() {
+
                 @Override
-                public int getLayoutId() {
-                    return R.layout.item_layout;
+                public View onCreateView(ViewGroup parent) {
+                    return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
                 }
 
                 @Override
-                public void bindView(View view, int position) {
+                public void onBindView(View view, int position) {
                     ViewHolder viewHolder = (ViewHolder) view.getTag();
                     if (viewHolder == null) {
                         viewHolder = new ViewHolder();
@@ -115,14 +114,8 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
                 }
 
                 @Override
-                public void displaying(int position) {
+                public void onItemDisplay(int position) {
 
-                }
-
-                @Override
-                public void onItemClick(View view, int position) {
-                    super.onItemClick(view, position);
-                    Toast.makeText(view.getContext(),"click:"+position,Toast.LENGTH_SHORT).show();
                 }
             });
         }
