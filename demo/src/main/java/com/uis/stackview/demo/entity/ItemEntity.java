@@ -1,4 +1,4 @@
-package com.stone.pile.entity;
+package com.uis.stackview.demo.entity;
 
 import org.json.JSONObject;
 
