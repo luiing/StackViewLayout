@@ -16,15 +16,16 @@ import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Scroller;
 
 import com.stone.pile.libs.R;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Created by xmuSistone on 2017/5/12. com.stone.pile.libs.PileLayout
  * @author  uis 2018/10/30
  */
 
@@ -62,6 +63,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     private Interpolator interpolator = new DecelerateInterpolator(1.6f);
     private StackAdapter adapter;
     private boolean hasSetAdapter = false;
+    private LinkedList<View> views = new LinkedList<>();
     private FrameLayout animatingView;
     private VelocityTracker mVelocity;
 
@@ -109,18 +111,25 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             int realSize = getRealStackSize();
             everyWidth = width - getPaddingLeft() - getPaddingRight() - stackSpace *(realSize-1) - 2*stackEdge;
             everyHeight = height;
-            originX.add(stackEdge);
+            //originX.add(stackEdge);
             originX.add(stackEdge);
             for(int i = 1; i < realSize; i++){
-                originX.add(originX.get(i) + stackSpace);
+                originX.add(originX.get(i-1) + stackSpace);
             }
-            originX.add(width);
+            //originX.add(width);
         }
     }
+
+    boolean isLayout = false;
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         Log.e("xx","onLayout....");
+        if(!hasSetAdapter || isLayout){
+            return;
+        }
+        Log.e("xx","onLayout....again");
+        isLayout = true;
         for (int i = 0, size = getChildCount(); i < size; i++) {
             View itemView = getChildAt(i);
             itemView.measure(everyWidth, everyHeight);
@@ -140,7 +149,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             itemView.setPivotX(pivot);
             itemView.setPivotY(everyHeight / 2);
             itemView.layout(left, top, right, bottom);
-            if (i < size - 2) {
+            if (i < size - 1) {
                 adjustScale(i, itemView);
             }
         }
@@ -150,25 +159,20 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         return adapter.getItemCount() < stackSize ? adapter.getItemCount() : stackSize;
     }
 
-    private void initAdapterView(){
-        Log.e("xx","initAdapterview start....");
-        if (adapter != null && getChildCount() == 0 && adapter.getItemCount() > 0) {
-            hasSetAdapter = true;
-            for (int i = 0,size = getRealStackSize() + 2; i < size; i++) {
-                FrameLayout frameLayout = new FrameLayout(getContext());
-                View view = adapter.onCreateView(frameLayout);
-                FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(everyWidth, everyHeight);
-                frameLayout.addView(view, lp1);
-                addView(frameLayout);
-            }
-
+    private void addView(int index){
+        Log.e("xx","addView start....");
+        if (adapter != null  && adapter.getItemCount() > 0){
+            FrameLayout frameLayout = new FrameLayout(getContext());
+            View view = adapter.onCreateView(this);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(everyWidth, everyHeight);
+            frameLayout.addView(view,params);
+            addView(frameLayout,index < 0 ? -1 :index);
         }
     }
 
     private void adjustScale(int index,View itemView) {
-        int rate = getRealStackSize() - (index <= 1 ? 1: index);
+        int rate = getRealStackSize() -1 - index;
         float scale = (float) Math.pow(1.0f - stackZoom,rate);
-        itemView.setScaleX(1.0f - stackZoom);
         itemView.setScaleY(scale);
     }
 
@@ -190,34 +194,22 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
      */
     private void doBindAdapter() {
         if(adapter != null && !hasSetAdapter){
-            initAdapterView();
+            hasSetAdapter = true;
+            for (int i = 0,size = getRealStackSize(); i < size; i++){
+                addView(i);
+            }
             doBindAdapterData();
         }
     }
 
     private void doBindAdapterData(){
-        int size = getRealStackSize();
-        FrameLayout frameLayout;
-        for (int i = 0; i < size + 2; i++) {
-            frameLayout = (FrameLayout) getChildAt(i);
-            adapter.onBindView(frameLayout.getChildAt(0),getRealIndex(size,i));//size-1-i
-        }
-    }
-
-    private int getRealIndex(int size,int index){
         int count = adapter.getItemCount();
-        int real;
-        //底层
-        if(0 == index){
-            real = count > size ? size : 0;
-        }//顶层
-        else if(size+1 == index){
-            real = count - 1;
-        }//中间层
-        else{
-            real = size - index;
+        int size = getChildCount();
+        for (int i = 0; i < size; i++) {
+            View view =  getChildAt(i);
+            adapter.onBindView(view,size-1-i);//size-1-i
+
         }
-        return real;
     }
 
     @Override
@@ -296,9 +288,17 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
 
     public void computeScroll(int dx) {
         //dx<0 left, dx>0 right
-        for (int i = 3,size = 2 + getRealStackSize(); i < size; i++) {
+        for (int size = getChildCount(),i = size-1; i < size; i++) {
             View itemView = getChildAt(i);
             itemView.setTranslationX(itemView.getTranslationX() + dx);
+            if(size == 3) {
+                Log.e("cc","remove...");
+                removeViewAt(0);
+            }else if(size == 2){
+                isLayout = false;
+                addView(2);
+            }
+
         }
     }
 

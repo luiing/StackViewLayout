@@ -3,12 +3,14 @@ package com.uis.stackview.demo.activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
 import com.uis.stackview.StackLayout;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
@@ -44,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {
-                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
+                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,null);
             }
 
             @Override
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     viewHolder.imageView = view.findViewById(R.id.imageView);
                     view.setTag(viewHolder);
                 }
-                //Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
+                Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
                 Glide.with(view.getContext())
                         .load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
             }
