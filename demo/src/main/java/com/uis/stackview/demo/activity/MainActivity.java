@@ -1,33 +1,19 @@
-package com.stone.pile.activity;
+package com.uis.stackview.demo.activity;
 
-import android.animation.Animator;
-import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.stone.pile.R;
-import com.stone.pile.entity.ItemEntity;
-import com.stone.pile.util.Utils;
-import com.stone.pile.widget.FadeTransitionImageView;
-import com.stone.pile.widget.HorizontalTransitionLayout;
-import com.stone.pile.widget.VerticalTransitionLayout;
-import com.uis.stackview.StackViewLayout;
+import com.uis.stackview.StackLayout;
+import com.uis.stackview.demo.R;
+import com.uis.stackview.demo.entity.ItemEntity;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -39,18 +25,51 @@ import androidx.recyclerview.widget.RecyclerView;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private RecyclerView recyclerView;
-
+    private StackLayout stackViewLayout;
+    ArrayList<ItemEntity> dataList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         recyclerView = findViewById(R.id.recyclerView);
+        stackViewLayout = findViewById(R.id.stacklayout);
         findViewById(R.id.bt_web).setOnClickListener(this);
         findViewById(R.id.bt_app).setOnClickListener(this);
 
+        dataList = StackAdapter.initDataList(this);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StackAdapter());
+        stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
+            @Override
+            public View onCreateView(ViewGroup parent) {
+                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
+            }
+
+            @Override
+            public void onBindView(View view, int position) {
+                StackAdapter.ViewHolder viewHolder = (StackAdapter.ViewHolder) view.getTag();
+                if (viewHolder == null) {
+                    viewHolder = new StackAdapter.ViewHolder();
+                    viewHolder.imageView = view.findViewById(R.id.imageView);
+                    view.setTag(viewHolder);
+                }
+                //Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
+                Glide.with(view.getContext())
+                        .load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
+            }
+
+            @Override
+            public int getItemCount() {
+                return dataList.size();
+            }
+
+            @Override
+            public void onItemDisplay(int position) {
+
+            }
+        });
     }
 
     @Override

@@ -3,16 +3,15 @@ package com.uis.stackview;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
@@ -28,17 +27,14 @@ import java.util.List;
  * @author  uis 2018/10/30
  */
 
-public class StackViewLayout extends ViewGroup implements View.OnClickListener,ViewTreeObserver.OnGlobalLayoutListener {
-
-    private final int mMaximumVelocity;
+public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalLayoutListener {
 
     /** 层叠之间间距 */
     private int stackSpace = 30;
+    /** 层叠视图边距 */
     private int stackEdge = 0;
     /** 层叠缩放比例 */
     private float stackZoom = 0.2f;
-     /** 显示数量 */
-
     /** 层叠显示数量 */
     private int stackSize = 3;
     private boolean stackLooper = false;
@@ -47,39 +43,32 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     private int everyWidth;
     private int everyHeight;
-    private int offsetIndex = 0;
 
     private List<Integer> originX = new ArrayList<>();
 
-    // 拖拽相关
-    private static final int MODE_IDLE = 0;
-    private static final int MODE_HORIZONTAL = 1;
-    private static final int MODE_VERTICAL = 2;
-    //速度阀值
-    private static final int VELOCITY_THRESHOLD = 200;
-    private int scrollMode;
     private int downX, downY;
     private float lastX;
+    private boolean swipEnable = false;
     // 判定为滑动的阈值，单位是像素
     private final int mTouchSlop;
 
     private float animateValue;
     private ObjectAnimator animator;
     private Interpolator interpolator = new DecelerateInterpolator(1.6f);
-    private StackViewAdapter adapter;
+    private StackAdapter adapter;
     private boolean hasSetAdapter = false;
     private FrameLayout animatingView;
-    private VelocityTracker mVelocityTracker;
+    private VelocityTracker mVelocity;
 
-    public StackViewLayout(Context context) {
+    public StackLayout(Context context) {
         this(context, null);
     }
 
-    public StackViewLayout(Context context, AttributeSet attrs) {
+    public StackLayout(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public StackViewLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public StackLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         TypedArray type = context.obtainStyledAttributes(attrs, R.styleable.stackview);
         stackSpace =  (int)type.getDimension(R.styleable.stackview_stackSpace, stackSpace);
@@ -92,18 +81,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mTouchSlop = configuration.getScaledTouchSlop();
-        mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
         getViewTreeObserver().addOnGlobalLayoutListener(this);
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (null != adapter) {
-            int position = offsetIndex;
-            if (position >= 0 && position < adapter.getItemCount()) {
-                adapter.onItemClick(((FrameLayout) v).getChildAt(0), position);
-            }
-        }
     }
 
     @Override
@@ -137,17 +115,16 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         Log.e("xx","onLayout....");
-        for (int i = 0,size = getChildCount(); i < size; i++) {
+        for (int i = 0, size = getChildCount(); i < size; i++) {
             View itemView = getChildAt(i);
-            itemView.measure(everyWidth,everyHeight);
-
+            itemView.measure(everyWidth, everyHeight);
             int x = originX.get(i);
-            int left,right,pivot;
-            if(stackEdgeModel == 1) {
+            int left, right, pivot;
+            if (stackEdgeModel == 1) {
                 left = x;
                 right = everyWidth + x;
                 pivot = stackEdge;
-            }else{
+            } else {
                 right = getWidth() - x;
                 left = right - everyWidth;
                 pivot = getWidth() - stackEdge;
@@ -157,8 +134,8 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
             itemView.setPivotX(pivot);
             itemView.setPivotY(everyHeight / 2);
             itemView.layout(left, top, right, bottom);
-            if(i < size - 2) {
-                adjustScale(i,itemView);
+            if (i < size - 2) {
+                adjustScale(i, itemView);
             }
         }
     }
@@ -171,13 +148,11 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         Log.e("xx","initAdapterview start....");
         if (adapter != null && getChildCount() == 0 && adapter.getItemCount() > 0) {
             hasSetAdapter = true;
-            LayoutInflater inflater = LayoutInflater.from(getContext());
             for (int i = 0,size = getRealStackSize() + 2; i < size; i++) {
                 FrameLayout frameLayout = new FrameLayout(getContext());
-                View view = inflater.inflate(adapter.getLayoutId(), null);
+                View view = adapter.onCreateView(frameLayout);
                 FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(everyWidth, everyHeight);
                 frameLayout.addView(view, lp1);
-                frameLayout.setOnClickListener(this);
                 addView(frameLayout);
             }
 
@@ -194,7 +169,7 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     /**
      * 绑定Adapter
      */
-    public void setAdapter(StackViewAdapter adapter) {
+    public void setAdapter(StackAdapter adapter) {
         Log.e("xx","setAdapter....");
         this.adapter = adapter;
         // ViewdoBindAdapter尚未渲染出来的时候，不做适配
@@ -219,19 +194,21 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         FrameLayout frameLayout;
         for (int i = 0; i < size + 2; i++) {
             frameLayout = (FrameLayout) getChildAt(i);
-            adapter.bindView(frameLayout.getChildAt(0),getRealIndex(size,i));//size-1-i
-            //Log.e("xx","doBind....");
+            adapter.onBindView(frameLayout.getChildAt(0),getRealIndex(size,i));//size-1-i
         }
     }
 
     private int getRealIndex(int size,int index){
         int count = adapter.getItemCount();
         int real;
-        if(0 == index){//底层
+        //底层
+        if(0 == index){
             real = count > size ? size : 0;
-        }else if(size+1 == index){//顶层
+        }//顶层
+        else if(size+1 == index){
             real = count - 1;
-        }else{//中间层
+        }//中间层
+        else{
             real = size - index;
         }
         return real;
@@ -241,39 +218,19 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     public boolean onInterceptTouchEvent(MotionEvent event) {
         // 决策是否需要拦截
         int action = event.getActionMasked();
+        Log.e("xx","onInterceptTouchEvent="+action);
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 downX = (int) event.getX();
                 downY = (int) event.getY();
                 lastX = event.getX();
-                scrollMode = MODE_IDLE;
                 if (null != animator) {
                     animator.cancel();
                 }
-                initVelocityTrackerIfNotExists();
-                mVelocityTracker.addMovement(event);
                 animatingView = null;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (scrollMode == MODE_IDLE) {
-                    float xDistance = Math.abs(downX - event.getX());
-                    float yDistance = Math.abs(downY - event.getY());
-                    if (xDistance > yDistance && xDistance > mTouchSlop) {
-                        // 水平滑动，需要拦截
-                        scrollMode = MODE_HORIZONTAL;
-                        return true;
-                    } else if (yDistance > xDistance && yDistance > mTouchSlop) {
-                        // 垂直滑动
-                        scrollMode = MODE_VERTICAL;
-                    }
-                }
-                break;
-            case MotionEvent.ACTION_CANCEL:
-            case MotionEvent.ACTION_UP:
-                recycleVelocityTracker();
-                // ACTION_UP还能拦截，说明手指没滑动，只是一个click事件，同样需要snap到特定位置
-                //onRelease(event.getX(), 0);
-                break;
+                return isSwipEnable(event);
                 default:
         }
         return super.onInterceptTouchEvent(event);
@@ -281,28 +238,55 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mVelocityTracker.addMovement(event);
+        Log.e("xx","onTouchEvent="+event.getActionMasked());
         int action = event.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_MOVE:
-                int currentX = (int) event.getX();
-                int dx = (int) (currentX - lastX);
-                requireScrollChange(dx);
-                lastX = currentX;
+                if(isSwipEnable(event)) {
+                    int currentX = (int) event.getX();
+                    int dx = (int) (currentX - lastX);
+                    requireScrollChange(dx);
+                    lastX = currentX;
+                }
                 break;
-
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                final VelocityTracker velocityTracker = mVelocityTracker;
-                velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
-                int velocity = (int) velocityTracker.getXVelocity();
-                recycleVelocityTracker();
+                default:
+                    swipEnable = false;
 
-                //onRelease(event.getX(), velocity);
-                break;
-            default:
         }
-        return true;
+
+        return  true;
+    }
+
+    /**
+     * 在StackLayout是否能水平滑动
+     * @param event
+     * @return
+     */
+    private boolean isSwipEnable(MotionEvent event){
+        if (!swipEnable) {
+            float xDistance = Math.abs(downX - event.getX());
+            float yDistance = Math.abs(downY - event.getY());
+            if (xDistance > yDistance && xDistance > mTouchSlop) {
+                // 水平滑动，需要拦截
+                swipEnable = true;
+                //在RecyclerView中需要禁止父类拦截
+                requestParentDisallowInterceptTouchEvent(true);
+                return true;
+            } else if (yDistance > xDistance && yDistance > mTouchSlop) {
+                // 垂直滑动
+
+            }
+        }
+        return swipEnable;
+    }
+
+    private void requestParentDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        final ViewParent parent = getParent();
+        if (parent != null) {
+            parent.requestDisallowInterceptTouchEvent(disallowIntercept);
+        }
     }
 
     private void onRelease(float eventX, int velocityX) {
@@ -313,42 +297,26 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
     }
 
     private void requireScrollChange(int dx) {
-        if(getChildCount() == 0){
-            return;
-        }
         //dx<0 left, dx>0 right
-        for (int i = 0,size = 2 + getRealStackSize(); i < size; i++) {
-            Log.e("x",size+",position="+i+",dx="+dx);
+        for (int i = 3,size = 1 + getRealStackSize(); i < size; i++) {
             View itemView = getChildAt(i);
             itemView.offsetLeftAndRight(dx);
-            //adapter.bindView(itemView,getRealIndex(size-2,i));
         }
     }
 
-    private void initVelocityTrackerIfNotExists() {
-        if (mVelocityTracker == null) {
-            mVelocityTracker = VelocityTracker.obtain();
+    private void initVelocityTracker() {
+        if (mVelocity == null) {
+            mVelocity = VelocityTracker.obtain();
         }
     }
 
     private void recycleVelocityTracker() {
-        if (mVelocityTracker != null) {
-            mVelocityTracker.recycle();
-            mVelocityTracker = null;
+        if (mVelocity != null) {
+            mVelocity.recycle();
+            mVelocity = null;
         }
     }
 
-    @Override
-    public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-        if (disallowIntercept) {
-            recycleVelocityTracker();
-        }
-        super.requestDisallowInterceptTouchEvent(disallowIntercept);
-    }
-
-    /**
-     * 属性动画，请勿删除
-     */
     public void setAnimateValue(float animateValue) {
         // 当前应该在的位置
         this.animateValue = animateValue;
@@ -360,37 +328,17 @@ public class StackViewLayout extends ViewGroup implements View.OnClickListener,V
         return animateValue;
     }
 
-    /**
-     * 适配器
-     */
-    public static abstract class StackViewAdapter {
+    public static abstract class StackAdapter {
 
-        /**
-         * layout文件ID，调用者必须实现
-         */
-        public abstract int getLayoutId();
+        public abstract View onCreateView(ViewGroup parent);
 
-        /**
-         * item数量，调用者必须实现
-         */
-        public abstract int getItemCount();
+        public abstract void onBindView(View view, int index);
 
-        /**
-         * View与数据绑定回调，可重载
-         */
-        public void bindView(View view, int index) {
+        public int getItemCount(){
+            return 0;
         }
 
-        /**
-         * 正在展示的回调，可重载
-         */
-        public void displaying(int position) {
-        }
-
-        /**
-         * item点击，可重载
-         */
-        public void onItemClick(View view, int position) {
+        public void onItemDisplay(int position) {
         }
     }
 }
