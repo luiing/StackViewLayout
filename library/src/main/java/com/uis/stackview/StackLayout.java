@@ -16,6 +16,7 @@ import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
+import android.widget.Scroller;
 
 import com.stone.pile.libs.R;
 
@@ -29,6 +30,9 @@ import java.util.List;
 
 public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalLayoutListener {
 
+    public final static int MODEL_LEFT = 1;
+    public final static int MODEL_RIGHT = 2;
+
     /** 层叠之间间距 */
     private int stackSpace = 30;
     /** 层叠视图边距 */
@@ -39,7 +43,8 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     private int stackSize = 3;
     private boolean stackLooper = false;
     /** 1 ->left, 2 ->right */
-    private int stackEdgeModel = 1;
+    private int stackEdgeModel = MODEL_LEFT;
+
 
     private int everyWidth;
     private int everyHeight;
@@ -59,6 +64,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     private boolean hasSetAdapter = false;
     private FrameLayout animatingView;
     private VelocityTracker mVelocity;
+
 
     public StackLayout(Context context) {
         this(context, null);
@@ -108,7 +114,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             for(int i = 1; i < realSize; i++){
                 originX.add(originX.get(i) + stackSpace);
             }
-            originX.add(width-1);
+            originX.add(width);
         }
     }
 
@@ -120,7 +126,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             itemView.measure(everyWidth, everyHeight);
             int x = originX.get(i);
             int left, right, pivot;
-            if (stackEdgeModel == 1) {
+            if (stackEdgeModel == MODEL_LEFT) {
                 left = x;
                 right = everyWidth + x;
                 pivot = stackEdge;
@@ -245,7 +251,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
                 if(isSwipEnable(event)) {
                     int currentX = (int) event.getX();
                     int dx = (int) (currentX - lastX);
-                    requireScrollChange(dx);
+                    computeScroll(dx);
                     lastX = currentX;
                 }
                 break;
@@ -276,7 +282,6 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
                 return true;
             } else if (yDistance > xDistance && yDistance > mTouchSlop) {
                 // 垂直滑动
-
             }
         }
         return swipEnable;
@@ -289,20 +294,22 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         }
     }
 
-    private void onRelease(float eventX, int velocityX) {
-
-//        animator = ObjectAnimator.ofFloat(this, "animateValue", animatingView.getLeft(), 0);
-//        animator.setInterpolator(interpolator);
-//        animator.setDuration(300).start();
-    }
-
-    private void requireScrollChange(int dx) {
+    public void computeScroll(int dx) {
         //dx<0 left, dx>0 right
-        for (int i = 3,size = 1 + getRealStackSize(); i < size; i++) {
+        for (int i = 3,size = 2 + getRealStackSize(); i < size; i++) {
             View itemView = getChildAt(i);
-            itemView.offsetLeftAndRight(dx);
+            itemView.setTranslationX(itemView.getTranslationX() + dx);
         }
     }
+
+    private void onRelease(float eventX, int velocityX) {
+
+        animator = ObjectAnimator.ofFloat(this, "animateValue", animatingView.getLeft(), 0);
+        animator.setInterpolator(interpolator);
+        animator.setDuration(300).start();
+    }
+
+
 
     private void initVelocityTracker() {
         if (mVelocity == null) {
@@ -321,7 +328,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         // 当前应该在的位置
         this.animateValue = animateValue;
         int dx = Math.round(animateValue - animatingView.getLeft());
-        requireScrollChange(dx);
+        computeScroll(dx);
     }
 
     public float getAnimateValue() {
