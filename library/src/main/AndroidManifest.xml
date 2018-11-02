@@ -1,2 +1,3 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.stone.pile.libs">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.uis.stackview">
 </manifest>
