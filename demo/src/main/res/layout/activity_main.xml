@@ -6,12 +6,6 @@
     android:background="#fff"
     android:orientation="vertical">
     <include layout="@layout/stack_right"/>
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-    </androidx.recyclerview.widget.RecyclerView>
 
     <Button android:id="@+id/bt_web"
         android:layout_width="match_parent"
@@ -25,5 +19,14 @@
         android:text="app"
         android:visibility="gone"
         />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </androidx.recyclerview.widget.RecyclerView>
+
+
 
 </LinearLayout>
