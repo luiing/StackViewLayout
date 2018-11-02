@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.facebook.drawee.view.SimpleDraweeView;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
 import com.uis.stackview.StackLayout;
@@ -46,7 +47,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 1;
+        return 10;
     }
 
     public static ArrayList<ItemEntity> initDataList(Context context) {
@@ -77,6 +78,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     public static class ViewHolder {
         ImageView imageView;
+        SimpleDraweeView dv;
     }
 
     static class StackVH extends RecyclerView.ViewHolder{
@@ -104,6 +106,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
                         view.setTag(viewHolder);
                     }
                     //Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
+                    if(itemView.getContext() != null)
                     Glide.with(itemView.getContext())
                             .load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
                 }
