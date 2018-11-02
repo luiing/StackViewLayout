@@ -16,6 +16,7 @@ import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -28,7 +29,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private RecyclerView recyclerView;
     private StackLayout stackViewLayout;
-    ArrayList<ItemEntity> dataList;
+    List<ItemEntity> dataList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dataList = StackAdapter.initDataList(this);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new StackAdapter());
+        //recyclerView.setAdapter(new StackAdapter());
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {

@@ -8,6 +8,6 @@
     stack:stackEdge="20dp"
     stack:stackZoom="0.08"
     stack:stackLooper = "true"
-    stack:stackSize = "3"
+    stack:stackSize = "15"
     stack:stackEdgeModel = "left">
 </com.uis.stackview.StackLayout>
