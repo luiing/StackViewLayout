@@ -4,9 +4,10 @@
     android:id="@+id/stacklayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    stack:stackSpace="10dp"
+    stack:stackSpace="5dp"
     stack:stackEdge="20dp"
-    stack:stackZoom="0.08"
+    stack:stackZoomX="0.1"
+    stack:stackZoomY="0.1"
     stack:stackLooper = "true"
     stack:stackSize = "3"
     stack:stackEdgeModel = "left">

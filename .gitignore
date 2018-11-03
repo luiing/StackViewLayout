@@ -10,7 +10,7 @@
 bin/
 gen/
 out/
-
+bintray.gradle
 # Gradle files
 .gradle/
 build/

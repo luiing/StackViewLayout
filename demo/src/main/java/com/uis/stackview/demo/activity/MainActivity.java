@@ -9,13 +9,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
+import com.facebook.common.logging.FLog;
+import com.facebook.common.logging.LoggingDelegate;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.google.gson.Gson;
 import com.uis.stackview.StackLayout;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
-
-import java.util.ArrayList;
+import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -28,12 +31,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private RecyclerView recyclerView;
     private StackLayout stackViewLayout;
-    ArrayList<ItemEntity> dataList;
+    List<ItemEntity> dataList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FLog.setMinimumLoggingLevel(FLog.VERBOSE);
+        if(!Fresco.hasBeenInitialized()) {
+            ImagePipelineConfig config = ImagePipelineConfig.newBuilder(getApplicationContext())
+                    .setDiskCacheEnabled(true)
+                    .setDownsampleEnabled(true)
+                    .build();
+            Fresco.initialize(getApplicationContext(), config);
+        }
         recyclerView = findViewById(R.id.recyclerView);
         stackViewLayout = findViewById(R.id.stacklayout);
         findViewById(R.id.bt_web).setOnClickListener(this);
@@ -43,10 +54,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StackAdapter());
+        //stackViewLayout.setStackLooper(true);
+        stackViewLayout.setPosition(10);
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {
-                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,null);
+                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_fresco_layout,null);
             }
 
             @Override
@@ -54,12 +67,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 StackAdapter.ViewHolder viewHolder = (StackAdapter.ViewHolder) view.getTag();
                 if (viewHolder == null) {
                     viewHolder = new StackAdapter.ViewHolder();
-                    viewHolder.imageView = view.findViewById(R.id.imageView);
+                    viewHolder.dv = view.findViewById(R.id.imageView);
                     view.setTag(viewHolder);
                 }
                 Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
-                Glide.with(view.getContext())
-                        .load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
+                DraweeController controller = Fresco.newDraweeControllerBuilder()
+                        .setUri(Uri.parse(dataList.get(position).getCoverImageUrl()))
+                        .setTapToRetryEnabled(true)
+                        .setOldController(viewHolder.dv.getController())
+                        .build();
+                viewHolder.dv.setController(controller);
             }
 
             @Override
@@ -69,7 +86,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onItemDisplay(int position) {
+                Log.e("xx","display = " + position);
+            }
 
+            @Override
+            public void onItemClicked(int position) {
+                Log.e("xx","clicked = " + position);
+                stackViewLayout.setStackLooper(false);
+                stackViewLayout.setPosition(position+3);
             }
         });
     }
