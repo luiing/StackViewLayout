@@ -1,8 +1,9 @@
 # StackViewLayout
 **An swip StackViewLayout,support left and right.**
-***层叠随手势滑动，带轮播自定义ViewGroup**
 
-### captured images
+**层叠随手势滑动，带轮播自定义ViewGroup**
+
+### Captures
 
 ![效果图](/pic/demo20.gif)
 
@@ -84,7 +85,7 @@ stackEdgeModel|层叠位置|left/right
 
 ### Thanks
 
-    [PileLayout](https://github.com/xmuSistone/AndroidPileLayout)
+[AndroidPileLayout](https://github.com/xmuSistone/AndroidPileLayout)
 ## License
 
     Copyright 2018, uis
