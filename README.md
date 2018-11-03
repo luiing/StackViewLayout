@@ -8,7 +8,7 @@
 ![效果图](/pic/demo20.gif)
 
 ### how to use
-    `implementation 'com.uis.stacklayout:0.0.1'`
+    `implementation 'com.uis:stacklayout:0.0.1'`
 
 *Name*| *Descript*|*Value*
   -----|--------|---
