@@ -5,6 +5,7 @@
 
 ### Captures
 
+![效果图](/pic/pic001.png)
 ![效果图](/pic/demo20.gif)
 
 ### how to use
