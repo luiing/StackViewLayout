@@ -2,31 +2,19 @@ package com.uis.stackview.demo.activity;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-
-import com.bumptech.glide.Glide;
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.drawee.backends.pipeline.PipelineDraweeController;
-import com.facebook.drawee.backends.pipeline.PipelineDraweeControllerBuilder;
-import com.facebook.drawee.backends.pipeline.PipelineDraweeControllerFactory;
 import com.facebook.drawee.interfaces.DraweeController;
-import com.facebook.imagepipeline.core.ImagePipeline;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
-import com.facebook.imagepipeline.core.ImagePipelineFactory;
-import com.facebook.imagepipeline.request.ImageRequest;
-import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.google.gson.Gson;
 import com.uis.stackview.StackLayout;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
-
-import java.util.ArrayList;
 import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -62,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StackAdapter());
-        stackViewLayout.setStackLooper(false);
+        stackViewLayout.setStackLooper(true);
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {

@@ -47,7 +47,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 10;
+        return 2;
     }
 
     public static ArrayList<ItemEntity> initDataList(Context context) {

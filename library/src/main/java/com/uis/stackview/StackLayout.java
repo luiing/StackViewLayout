@@ -14,17 +14,9 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.view.ViewTreeObserver;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.AnticipateInterpolator;
-import android.view.animation.BounceInterpolator;
-import android.view.animation.CycleInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -36,19 +28,18 @@ import java.util.concurrent.TimeUnit;
  * @author  uis 2018/10/30
  */
 
-public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalLayoutListener,
-        ValueAnimator.AnimatorUpdateListener,View.OnClickListener {
+public class StackLayout extends ViewGroup implements ValueAnimator.AnimatorUpdateListener{
 
     public final static int MODEL_LEFT = 1;
     public final static int MODEL_RIGHT = 2;
     public final static int MODEL_NONE = 0;
     private final static String TAG = "StackLayout";
     /** 层叠之间间距 */
-    private int stackSpace = 30;
+    private int stackSpace = 10;
     /** 层叠视图边距 */
     private int stackEdge = 0;
     /** 层叠缩放比例 */
-    private float stackZoom = 0.2f;
+    private float stackZoom = 0.1f;
     /** 层叠显示数量 */
     private int stackSize = 3;
     /** 自动轮播 */
@@ -81,12 +72,12 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     private int mMaximumVelocity;
     private int mMaxDistance;
 
-    private boolean hasSetAdapter = false;
     private boolean needRelayout = true;
     private boolean isAnimRunning = false;
     private boolean isFingerTouch = false;
     private boolean autoPlay = false;
     private boolean canRemoveTopView = false;
+    private static long clickMills = System.currentTimeMillis();
 
 
     public StackLayout(Context context) {
@@ -110,8 +101,6 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mTouchSlop = configuration.getScaledTouchSlop();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
-        getViewTreeObserver().addOnGlobalLayoutListener(this);
-        setOnClickListener(this);
     }
 
     public void setStackSize(int size){
@@ -126,34 +115,12 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         setAutoPlay(stackLooper);
-
-        log("onAttachedToWindow....");
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         setAutoPlay(false);
-        hasSetAdapter = false;
-        for (int i=0; i < getChildCount();){
-            removeViewAt(i);
-        }
-        log("onDetachedFromWindow....");
-    }
-
-    @Override
-    public void onClick(View v) {
-        if(adapter != null){
-            adapter.onItemClicked(displayItemPosition);
-        }
-    }
-
-    @Override
-    public void onGlobalLayout() {
-        log("OnGlobalLayout....");
-        if (getWidth() > 0 && null != adapter && !hasSetAdapter) {
-            setAdapter(adapter);
-        }
     }
 
     @Override
@@ -161,56 +128,64 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         log("onMeasure..." + (adapter == null?"null":adapter.getItemCount()) + ",child="+getChildCount());
         int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec) ?
-                width/2 + getPaddingTop() + getPaddingBottom() : getDefaultSize(getSuggestedMinimumHeight(),heightMeasureSpec);
+                width/2 + getPaddingTop() + getPaddingBottom() :
+                getDefaultSize(getSuggestedMinimumHeight(),heightMeasureSpec);
         setMeasuredDimension(width,height);
         if(adapter != null && adapter.getItemCount() > 0 ){
+            int size = getRealStackSize();
             if(originX.isEmpty()) {
-                int realSize = getRealStackSize();
-                everyWidth = width - getPaddingLeft() - getPaddingRight() - stackSpace * (realSize - 1) - 2 * stackEdge;
+                int stackSpaces = 0;
+                everyWidth = width - getPaddingLeft() - getPaddingRight() - stackSpace * (size - 1) - 2 * stackEdge;
                 everyHeight = height;
                 originX.add(stackEdge);
-                for (int i = 1; i < realSize; i++) {
+                for (int i = 1; i < size; i++) {
                     originX.add(originX.get(i - 1) + stackSpace);
                 }
                 mMaxDistance = everyWidth / 3;
+            }
+            int childSize = getChildCount();
+            if(childSize < size) {
+                needRelayout = true;
+                for (int i = childSize; i < size; i++) {
+                    View view = getStackView();
+                    addView(view);
+                    adapter.onBindView(view, size - 1 - i);
+                }
+                log("childSize = " + getChildCount());
+                displayItemPosition = 0;
+                adapter.onItemDisplay(displayItemPosition);
             }
         }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        log("onLayout....hasSetAdapter= " + hasSetAdapter);
-        if(!needRelayout){
-            return;
-        }
-        log("onLayout....");
-        for (int i = 0, size = getChildCount(); i < size && i < stackSize; i++) {
-            View view = getChildAt(i);
-            view.measure(everyWidth,everyHeight);
-            int x = originX.get(i);
-            int left, right, pivot;
-            if (stackEdgeModel == MODEL_LEFT) {
-                left = x;
-                right = everyWidth + x;
-                pivot = stackEdge;
-            } else {
-                right = getWidth() - x;
-                left = right - everyWidth;
-                pivot = getWidth() - stackEdge;
-            }
-            int top = 0;
-            int bottom = top + everyHeight;
-            view.setPivotX(pivot);
-            view.setPivotY(everyHeight / 2);
-            view.layout(left, top, right, bottom);
-            if (i < size - 1) {
-                adjustScale(i, view);
-            }else{
-                view.setScaleY(1f);
-            }
-        }
-        if(getChildCount() > 0){
+        log("onLayout....needRelayout=" + needRelayout);
+        if(needRelayout) {
+            log("onLayout....");
             needRelayout = false;
+            for (int i = 0, size = getChildCount(); i < size && i < stackSize; i++) {
+                View view = getChildAt(i);
+                int x = originX.get(i);
+                int left, right, pivot;
+                if (stackEdgeModel == MODEL_LEFT) {
+                    left = x;
+                    right = everyWidth + x;
+                    pivot = stackEdge;
+                } else {
+                    right = getWidth() - x;
+                    left = right - everyWidth;
+                    pivot = getWidth() - stackEdge;
+                }
+                view.setPivotX(pivot);
+                view.setPivotY(everyHeight / 2);
+                view.layout(left, 0, right, everyHeight);
+                if (i < size - 1) {
+                    setChildScale(i, view);
+                } else {
+                    view.setScaleY(1f);
+                }
+            }
         }
     }
 
@@ -229,6 +204,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(everyWidth, everyHeight);
             frame.addView(createView,params);
             view = frame;
+            view.measure(everyWidth,everyHeight);
         }
         return view;
     }
@@ -236,10 +212,9 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     private void removeStackView(View view){
         removeView(view);
         views.add(view);
-
     }
 
-    private void adjustScale(int index,View itemView) {
+    private void setChildScale(int index,View itemView) {
         int rate = getRealStackSize() -1 - index;
         float scale = (float) Math.pow(1.0f - stackZoom,rate);
         itemView.setScaleY(scale);
@@ -249,23 +224,9 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
      * 绑定Adapter
      */
     public void setAdapter(StackAdapter adapter) {
-        log("setAdapter..." + hasSetAdapter + ",width=" + everyWidth);
         this.adapter = adapter;
-        if ( everyWidth > 0 && adapter != null && !hasSetAdapter) {
-            hasSetAdapter = true;
-            displayItemPosition = 0;
-            int size = getRealStackSize();
-            for (int i=0; i < size; i++){
-                View view = getStackView();
-                addView(view);
-            }
-            log("childSize = " + getChildCount());
-            for(int i = size-1;i >= 0;i--){
-                adapter.onBindView(getChildAt(i),size-1-i);//size-1-i
-            }
-            displayItemPosition = 0;
-            adapter.onItemDisplay(displayItemPosition);
-        }
+        removeAllViewsInLayout();
+        //invalidate();
     }
 
     @Override
@@ -287,7 +248,6 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        super.onTouchEvent(event);
         mVelocity.addMovement(event);
         int action = event.getActionMasked();
         switch (action) {
@@ -298,21 +258,25 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
                 if(isSwipEnable(event)) {
                     int currentX = (int) event.getX();
                     int dx = (int) (currentX - lastX);
-                    computeScroll(dx);
+                    executeScroll(dx);
                     lastX = currentX;
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                if(downX == (int)lastX && adapter != null){
+                    if(filterClick()) {
+                        adapter.onItemClicked(displayItemPosition);
+                    }
+                }
             case MotionEvent.ACTION_CANCEL:
-                swipEnable = false;
                 mVelocity.computeCurrentVelocity(1000, mMaximumVelocity);
                 int velocity = (int) mVelocity.getXVelocity();
-                endScroll(velocity);
+                releaseScroll(velocity);
                 isFingerTouch = false;
+                swipEnable = false;
                 recycleVelocityTracker();
                 default:
         }
-
         return  true;
     }
 
@@ -329,7 +293,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
                 // 水平滑动，需要拦截
                 swipEnable = true;
                 //在RecyclerView中需要禁止父类拦截
-                requestParentDisallowInterceptTouchEvent(true);
+                requestParentDisallowInterceptTouchEvent();
                 return true;
             } else if (yDistance > xDistance && yDistance > mTouchSlop) {
                 // 垂直滑动
@@ -338,14 +302,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         return swipEnable;
     }
 
-    private void requestParentDisallowInterceptTouchEvent(boolean disallowIntercept) {
-        final ViewParent parent = getParent();
-        if (parent != null) {
-            parent.requestDisallowInterceptTouchEvent(disallowIntercept);
-        }
-    }
-
-    public void computeScroll(int dx) {
+    public void executeScroll(int dx) {
         //dx<0 left, dx>0 right
         if(!isAnimRunning && getChildCount() > 0) {
             //判断滑动方向
@@ -361,8 +318,8 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         }
     }
 
-    private void endScroll(int velocity){
-        if(!isAnimRunning && animatingView != null && adapter != null) {
+    private void releaseScroll(int velocity){
+        if(swipEnable && !isAnimRunning && animatingView != null && adapter != null) {
             float transX = animatingView.getTranslationX();
             log("end = " + transX);
             //滑动速度大于限定或者滑动距离大于宽度一部分，移出当前视图可视范围
@@ -370,18 +327,17 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             if(Math.abs(velocity) >= everyWidth || Math.abs(transX) > mMaxDistance){
                 if(velocity < 0){
                     if(isRightMoveOut()){
-                        moveOut();
+                        moveOutTopView();
                         recover = false;
                     }else{
-                        entryInto();
+                        addIntoTopView();
                     }
                 }else{
                     if(isLeftMoveOut()){
-                        moveOut();
+                        moveOutTopView();
                         recover = false;
                     }else{
-                        entryInto();
-
+                        addIntoTopView();
                     }
                 }
                 if(!recover) {
@@ -393,8 +349,20 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
                 transX *= -1;
                 canRemoveTopView = false;
             }
-            log("velocity = " + velocity+",end = " + transX + ",canRemoveTopView="+canRemoveTopView + ",recover=" + recover);
+            log("velocity = " + velocity+",end = " + transX + ",canRemoveTopView="+canRemoveTopView +
+                    ",recover=" + recover + ",swipModel =" + swipModel + ",edgeModel=" + stackEdgeModel);
             startEndAnimator(transX);
+        }
+    }
+
+    private void autoScroll(){
+        if(getChildCount() > 0 && !isFingerTouch) {
+            swipModel = stackEdgeModel == MODEL_LEFT ? MODEL_RIGHT : MODEL_LEFT;
+            animatingView = getChildAt(getChildCount() - 1);
+            canRemoveTopView = true;
+            autoPlay = true;
+            int sign = stackEdgeModel == MODEL_LEFT ? 1 : -1;
+            startEndAnimator( sign * getWidth());
         }
     }
 
@@ -416,7 +384,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     }
 
     /** 移除顶层 */
-    private void moveOut(){
+    private void moveOutTopView(){
         int cnt = adapter.getItemCount();
         displayItemPosition += 1;
         displayItemPosition %= cnt;
@@ -429,7 +397,7 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
     }
 
     /** 加入顶层 */
-    private void entryInto(){
+    private void addIntoTopView(){
 
     }
 
@@ -453,16 +421,6 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         }
     }
 
-    private void autoScroll(){
-        if(getChildCount() > 0 && !isFingerTouch) {
-            swipModel = stackEdgeModel == MODEL_LEFT ? MODEL_RIGHT : MODEL_LEFT;
-            animatingView = getChildAt(getChildCount() - 1);
-            canRemoveTopView = true;
-            autoPlay = true;
-            startEndAnimator(getWidth());
-        }
-    }
-
     @Override
     public void onAnimationUpdate(ValueAnimator animation) {
         isAnimRunning = true;
@@ -470,9 +428,9 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         animatingView.setTranslationX(animatingView.getTranslationX() + animateValue - animateLastValue);
         animateLastValue = animateValue;
         float fraction = animation.getAnimatedFraction();
-        if(fraction > 0.25 && autoPlay){
+        if(fraction > 0.4 && autoPlay){
             autoPlay = false;
-            moveOut();
+            moveOutTopView();
         }
         if (fraction >= 1.0f) {
             animator.removeUpdateListener(this);
@@ -484,6 +442,13 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
             animatingView = null;
             animator = null;
             isAnimRunning = false;
+        }
+    }
+
+    private void requestParentDisallowInterceptTouchEvent() {
+        final ViewParent parent = getParent();
+        if (parent != null) {
+            parent.requestDisallowInterceptTouchEvent(true);
         }
     }
 
@@ -546,7 +511,16 @@ public class StackLayout extends ViewGroup implements ViewTreeObserver.OnGlobalL
         }
     }
 
-    public static void log(String msg){
+    public static boolean filterClick(){
+        long nowMills = System.currentTimeMillis();
+        if(nowMills - clickMills > 500){
+            clickMills = nowMills;
+            return true;
+        }
+        return false;
+    }
+
+    protected static void log(String msg){
         StackTraceElement element = Thread.currentThread().getStackTrace()[4];
         Log.e(TAG,String.format("%1$s:%2$s(%3$s):%4$s",element.getClassName(),
             element.getMethodName(),element.getLineNumber(),msg));
