@@ -8,6 +8,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+import com.facebook.common.logging.FLog;
+import com.facebook.common.logging.LoggingDelegate;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FLog.setMinimumLoggingLevel(FLog.VERBOSE);
         if(!Fresco.hasBeenInitialized()) {
             ImagePipelineConfig config = ImagePipelineConfig.newBuilder(getApplicationContext())
                     .setDiskCacheEnabled(true)
@@ -50,7 +54,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StackAdapter());
-        stackViewLayout.setStackLooper(true);
+        //stackViewLayout.setStackLooper(true);
+        stackViewLayout.setPosition(10);
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {
@@ -67,7 +72,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
                 DraweeController controller = Fresco.newDraweeControllerBuilder()
-
                         .setUri(Uri.parse(dataList.get(position).getCoverImageUrl()))
                         .setTapToRetryEnabled(true)
                         .setOldController(viewHolder.dv.getController())
@@ -89,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onItemClicked(int position) {
                 Log.e("xx","clicked = " + position);
                 stackViewLayout.setStackLooper(false);
+                stackViewLayout.setPosition(position+3);
             }
         });
     }

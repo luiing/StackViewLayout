@@ -6,8 +6,9 @@
     android:layout_height="wrap_content"
     stack:stackSpace="5dp"
     stack:stackEdge="20dp"
-    stack:stackZoom="0.08"
-    stack:stackLooper = "false"
-    stack:stackSize = "5"
+    stack:stackZoomX="0.1"
+    stack:stackZoomY="0.1"
+    stack:stackLooper = "true"
+    stack:stackSize = "3"
     stack:stackEdgeModel = "left">
 </com.uis.stackview.StackLayout>

@@ -6,7 +6,8 @@
     android:layout_height="wrap_content"
     stack:stackSpace="10dp"
     stack:stackEdge="10dp"
-    stack:stackZoom="0.1"
+    stack:stackZoomX="0.2"
+    stack:stackZoomY="0.1"
     stack:stackLooper = "false"
     stack:stackSize = "3"
     stack:stackEdgeModel = "right">
