@@ -8,8 +8,8 @@
 ![效果图](/pic/pic001.jpeg)
 ![效果图](/pic/demo20.gif)
 
-### how to use
-    `implementation 'com.uis:stacklayout:0.0.1'`
+### Use
+    implementation 'com.uis:stacklayout:0.0.2'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -84,10 +84,16 @@ stackEdgeModel|层叠位置|left/right
         stackViewLayout.setPosition(10);
 ```
 
+### Version
+*Version*| *Descript*|*Fixed*
+----|----|----
+0.0.1|自动轮播，滑动从顶部移除，整体上浮|初始版本
+0.0.2|滑动从顶层加入，整体下沉|内部view点击事件
+
 ### Thanks
 
 [AndroidPileLayout](https://github.com/xmuSistone/AndroidPileLayout)
-## License
+### License
 
     Copyright 2018, uis
 
