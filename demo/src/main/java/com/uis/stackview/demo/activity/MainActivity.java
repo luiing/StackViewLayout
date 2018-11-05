@@ -69,6 +69,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     viewHolder = new StackAdapter.ViewHolder();
                     viewHolder.dv = view.findViewById(R.id.imageView);
                     view.setTag(viewHolder);
+                    viewHolder.dv.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Log.e("xx","dv clicked ...");
+                        }
+                    });
                 }
                 Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
                 DraweeController controller = Fresco.newDraweeControllerBuilder()

@@ -106,9 +106,11 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
                         view.setTag(viewHolder);
                     }
                     //Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
-                    if(itemView.getContext() != null)
-                    Glide.with(itemView.getContext())
-                            .load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
+                    try{
+                        Glide.with(view.getContext()).load(dataList.get(position).getCoverImageUrl()).into(viewHolder.imageView);
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
                 }
 
                 @Override

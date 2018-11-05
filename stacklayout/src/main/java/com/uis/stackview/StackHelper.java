@@ -6,7 +6,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
@@ -28,11 +27,13 @@ import static com.uis.stackview.StackLayout.MODEL_RIGHT;
 
 final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
-    private static long clickMills = System.currentTimeMillis();
+    private long clickMills = System.currentTimeMillis();
     private ScheduledThreadPoolExecutor executor;
     /** 判定为滑动的阈值，单位是像素 */
     private final int mTouchSlop;
     private int swipModel = MODEL_NONE;
+    /** true:顶层将移除，false:顶层将加新*/
+    private boolean isTopRemove;
     private LinkedList<WeakReference<View>> weakViews = new LinkedList<>();
     private List<Integer> originX = new ArrayList<>();
     private ReleaseAnimator mAnimator = new ReleaseAnimator();
@@ -44,13 +45,13 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     private boolean enableScroll = false;
     private int displayPosition = 0;
     private StackLayout layout;
+    private boolean debug = false;
 
     StackHelper(int touchSlop) {
         mTouchSlop = touchSlop;
     }
 
     void bindLayout(StackLayout layout) {
-        //log("bindLayout...");
         if(this.layout == null) {
             this.layout = layout;
         }
@@ -58,12 +59,11 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     void unbindLayout() {
-        //log("unbindLayout...");
         setAutoPlay(false);
     }
 
     void measureChild(int width,int height){
-        log("measue...");
+        //log("measue...");
         if(layout != null && layout.getAdapter() != null && layout.getAdapter().getItemCount() > 0 ){
             int size = layout.getRealStackSize();
             if(originX.isEmpty()) {
@@ -93,33 +93,48 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     void layoutChild(){
-        log("layout..."+layout.getChildCount());
+        //log("layout..."+layout.getChildCount());
         if(needRelayout && layout != null) {
             needRelayout = false;
-            //log("childCount="+layout.getChildCount());
-            for (int i = 0, size = layout.getChildCount(); i < size && i < layout.stackSize; i++) {
+            int childSize = layout.getChildCount();
+            int stackSize = layout.stackSize;
+            for (int i = 0; i < childSize; i++) {
+                int top, bottom, left, right, pivot;
                 View view = layout.getChildAt(i);
-                int x = originX.get(i);
-                int top,bottom,left, right, pivot;
-                if (layout.stackEdgeModel == MODEL_LEFT) {
-                    left = x;
-                    right = everyWidth + x;
-                    pivot = layout.stackEdge;
-                } else {
-                    right = layout.getWidth() - x;
-                    left = right - everyWidth;
-                    pivot = layout.getWidth() - layout.stackEdge;
-                }
                 top = layout.getPaddingTop();
                 bottom = everyHeight + top;
-                left += layout.getPaddingLeft();
-                view.setPivotX(pivot);
-                view.setPivotY(everyHeight / 2);
-                view.layout(left, top, right, bottom);
-                if (i < size - 1) {
-                    view.setScaleY(getChildScale(i,layout.stackZoomY));
-                } else {
-                    view.setScaleY(1f);
+                if(i < stackSize) {
+                    int x = originX.get(i);
+                    if (layout.stackEdgeModel == MODEL_LEFT) {
+                        left = x;
+                        right = everyWidth + left;
+                        pivot = layout.stackEdge;
+                    } else {
+                        right = layout.getWidth() - x;
+                        left = right - everyWidth;
+                        pivot = layout.getWidth() - layout.stackEdge;
+                    }
+                    view.setPivotX(pivot);
+                    view.setPivotY(everyHeight / 2);
+                    view.layout(left, top, right, bottom);
+                    view.setScaleY(getChildScale(i, layout.stackZoomY));
+                    if(view.getTranslationX() != 0f){
+                        if(i+1 < stackSize){
+                            view.setTranslationX(0);
+                        }else if(i+1 == stackSize && childSize == stackSize){//恢复stackSize时，补偿距离
+                            float distance = layout.stackEdgeModel == MODEL_RIGHT ? -everyWidth : everyWidth;
+                            view.setTranslationX(view.getTranslationX()+distance);
+                        }
+                    }
+                }else if(!isTopRemove){//顶层加入
+                    if (layout.stackEdgeModel == MODEL_LEFT) {
+                        left = layout.getWidth() - layout.stackEdge;
+                        right = everyWidth + left;
+                    }else{
+                        right = layout.stackEdge;
+                        left = right - everyWidth;
+                    }
+                    view.layout(left, top, right, bottom);
                 }
             }
         }
@@ -173,7 +188,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         if(view != null && layout != null) {
             layout.removeView(view);
             view.setTranslationX(0);
-            weakViews.add(new WeakReference<View>(view));
+            view.setScaleY(1f);
+            weakViews.add(new WeakReference<>(view));
         }
     }
 
@@ -212,16 +228,21 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     void executeScroll(int dx) {
         //dx<0 left, dx>0 right
         if(layout.getChildCount() > 0 && !mAnimator.isRunning()) {
+            View view;
             //判断滑动方向
-            if(swipModel == MODEL_NONE){
+            if(MODEL_NONE == swipModel){
                 swipModel = dx < 0 ? MODEL_LEFT : MODEL_RIGHT;
+                isTopRemove = layout.stackEdgeModel != swipModel;
+                if(isTopRemove){
+                    view = layout.getChildAt(layout.getChildCount()-1);
+                }else{
+                    view = addTopView();
+                }
+                mAnimator.setAnimatorView(view);
+            }else{
+                view = mAnimator.mAnimatorView;
             }
-            for (int size = layout.getChildCount(), i = size - 1; i < size; i++) {
-                View itemView = layout.getChildAt(i);
-                itemView.setTranslationX(itemView.getTranslationX() + 0.8f * dx);
-                StackHelper.log("dx = " + dx + ",view transX = " + itemView.getTranslationX());
-                mAnimator.setAnimatorView(itemView);
-            }
+            view.setTranslationX(view.getTranslationX() + 1.0f*everyWidth/layout.getWidth() * dx);
         }
     }
 
@@ -232,36 +253,33 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         setAutoPlay(layout.stackLooper);
         float transX = mAnimator.getTranslationX();
         if(layout.getAdapter() != null && Math.abs(transX) > 0 && !mAnimator.isRunning()) {
-            StackHelper.log("end = " + transX);
             //滑动速度大于限定或者滑动距离大于宽度一部分，移出当前视图可视范围
-            boolean recover = true;
             if(Math.abs(velocity) >= everyWidth || Math.abs(transX) > mMaxDistance){
-                if(MODEL_LEFT == swipModel){
-                    if(isRightMoveOutLeft()){
-                        addBottomView();
-                        recover = false;
-                    }else{
-                        addTopView();
-                    }
-                }else if(MODEL_RIGHT == swipModel){
-                    if(isLeftMoveOutRight()){
-                        addBottomView();
-                        recover = false;
-                    }else{
-                        addTopView();
-                    }
+                int sign = MODEL_LEFT == swipModel ? -1 : 1;
+                if(isTopRemove){
+                    addBottomView();
+                    transX = layout.getWidth()*sign - transX;
+                    mAnimator.startAnimator(true,false,transX,mMaxDistance,this);
+                }else{
+                    removeBottomView();
+                    transX = everyWidth*sign - transX;
+                    mAnimator.startAnimator(false,false,transX,mMaxDistance,this);
                 }
-                if(!recover) {
-                    transX = layout.getWidth() * Math.signum(transX) - transX;
-                }
-            }
-            if(recover){//取反恢复原样
+            }else {
+                //取反恢复原样
                 transX *= -1;
+                mAnimator.startAnimator(!isTopRemove,false,transX,mMaxDistance,this);
             }
-            StackHelper.log("velocity = " + velocity+",end = " + transX + ",distance="+mMaxDistance+ ",needRemoveTopView="+!recover +
-                    ",recover=" + recover + ",swipModel =" + swipModel + ",edgeModel=" + layout.stackEdgeModel);
-            mAnimator.startAnimator(!recover,false,transX,mMaxDistance,this);
             swipModel = MODEL_NONE;
+        }
+    }
+
+    void autoScroll(){
+        if(layout.getChildCount() > 0 && !isFingerTouch && !mAnimator.isRunning()) {
+            mAnimator.setAnimatorView(layout.getChildAt(layout.getChildCount() - 1));
+            int transX = (layout.stackEdgeModel == MODEL_LEFT ? 1 : -1)*layout.getWidth();
+            isTopRemove = true;
+            mAnimator.startAnimator(true,true,transX,mMaxDistance,this);
         }
     }
 
@@ -280,23 +298,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         }
     }
 
-    void autoScroll(){
-        if(layout.getChildCount() > 0 && !isFingerTouch && !mAnimator.isRunning()) {
-            mAnimator.setAnimatorView(layout.getChildAt(layout.getChildCount() - 1));
-            int transX = (layout.stackEdgeModel == MODEL_LEFT ? 1 : -1)*layout.getWidth();
-            mAnimator.startAnimator(true,true,transX,mMaxDistance,this);
-        }
-    }
-
-    private boolean isLeftMoveOutRight(){
-        return layout.stackEdgeModel == MODEL_LEFT && swipModel == MODEL_RIGHT;
-    }
-
-    private boolean isRightMoveOutLeft(){
-        return layout.stackEdgeModel == MODEL_RIGHT && swipModel == MODEL_LEFT;
-    }
-
-    /** 移除顶层 */
+    /** 加入底层 */
     private void addBottomView(){
         int cnt = layout.getAdapter().getItemCount();
         displayPosition += 1;
@@ -310,8 +312,30 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     /** 加入顶层 */
-    private void addTopView(){
+    private View addTopView(){
+        int cnt = layout.getAdapter().getItemCount();
+        int position = displayPosition - 1;
+        if(position < 0){
+            position += cnt;
+        }
+        View view = getStackView();
+        layout.getAdapter().onBindView(view, position);
+        needRelayout = true;
+        layout.addView(view);
+        return view;
+    }
 
+    /** 移除底层 */
+    private void removeBottomView(){
+        int cnt = layout.getAdapter().getItemCount();
+        displayPosition -= 1;
+        if(displayPosition < 0){
+            displayPosition += cnt;
+        }
+        needRelayout = true;
+        View view = layout.getChildAt(0);
+        removeStackView(view);
+        layout.getAdapter().onItemDisplay(displayPosition);
     }
 
     @Override
@@ -357,17 +381,18 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
         void setTranslationX(float value){
             if(mAnimatorView != null){
-                mAnimatorView.setTranslationX(mAnimatorView.getTranslationX()+value-lastValue);
+                float trans = mAnimatorView.getTranslationX()+value-lastValue;
+                mAnimatorView.setTranslationX(trans);
             }
             lastValue = value;
         }
 
-        void startAnimator(boolean needRemove,boolean needAdd,float transX, int distance, ValueAnimator.AnimatorUpdateListener listener){
-            int duration = needAdd ? 500 : (int)(Math.abs(transX)/distance*150);
-            needAddBottomView = needAdd;
-            needRemoveTopView = needRemove;
+        void startAnimator(boolean needRemoveTop,boolean needAddBottom,float transX, int distance, ValueAnimator.AnimatorUpdateListener listener){
+            int duration = needAddBottom ? 400 : (int)(Math.abs(transX)/distance*100);
+            needAddBottomView = needAddBottom;
+            needRemoveTopView = needRemoveTop;
             animator = ValueAnimator.ofFloat(0f, transX).setDuration(duration);
-            animator.setInterpolator(needAdd ? interpolatorAuto : interpolator);
+            animator.setInterpolator(needAddBottom ? interpolatorAuto : interpolator);
             animator.addUpdateListener(listener);
             animator.start();
         }
@@ -375,9 +400,9 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         void endAnimator(StackHelper helper){
             if(needRemoveTopView) {
                 helper.removeStackView(mAnimatorView);
-                needRemoveTopView = false;
             }
             animator.removeAllUpdateListeners();
+            needRemoveTopView = false;
             lastValue = 0f;
             mAnimatorView = null;
             animator = null;
@@ -421,7 +446,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         }
     }
 
-    static boolean filterClick(){
+    boolean filterClick(){
         long nowMills = System.currentTimeMillis();
         if(nowMills - clickMills > 500){
             clickMills = nowMills;
@@ -430,9 +455,11 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         return false;
     }
 
-    static void log(String msg){
-        StackTraceElement element = Thread.currentThread().getStackTrace()[3];
-        Log.e("StackLayout",String.format("%1$s:%2$s(%3$s):%4$s",element.getClassName(),
-                element.getMethodName(),element.getLineNumber(),msg));
+    void log(String msg){
+        if(debug) {
+            StackTraceElement element = Thread.currentThread().getStackTrace()[3];
+            Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),
+                    element.getMethodName(), element.getLineNumber(), msg));
+        }
     }
 }
