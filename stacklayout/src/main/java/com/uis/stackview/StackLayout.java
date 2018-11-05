@@ -134,6 +134,7 @@ public class StackLayout extends ViewGroup{
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
+        //stackHelper.log("act="+event.getActionMasked());
         int action = event.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -142,6 +143,9 @@ public class StackLayout extends ViewGroup{
                 downY = (int) event.getY();
                 lastX = event.getX();
                 break;
+                //fixed inner view touch
+            case MotionEvent.ACTION_MOVE:
+                return stackHelper.canScroll(downX,downY,event.getX(),event.getY());
                 default:
         }
         return super.onInterceptTouchEvent(event);
@@ -149,6 +153,7 @@ public class StackLayout extends ViewGroup{
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        //stackHelper.log("act="+event.getActionMasked());
         if(adapter == null || adapter.getItemCount() == 0){
             return false;
         }
@@ -170,11 +175,7 @@ public class StackLayout extends ViewGroup{
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                if(downX == (int)lastX && adapter != null){
-                    if(StackHelper.filterClick()) {
-                        stackHelper.onItemClicked();
-                    }
-                }
+                handleItemClicked();
             case MotionEvent.ACTION_CANCEL:
                 mVelocity.computeCurrentVelocity(1000, mMaximumVelocity);
                 int velocity = (int) mVelocity.getXVelocity();
@@ -183,6 +184,14 @@ public class StackLayout extends ViewGroup{
                 default:
         }
         return  true;
+    }
+
+    private void handleItemClicked(){
+        if(adapter != null && downX == (int)lastX){
+            if(stackHelper.filterClick()) {
+                stackHelper.onItemClicked();
+            }
+        }
     }
 
     public void requestParentDisallowInterceptTouchEvent() {
