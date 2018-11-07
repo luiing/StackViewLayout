@@ -1,81 +1,102 @@
-# android-pile-layout
-An abnormal horizontal ListView-like pile layout.
+# StackViewLayout
+**An swip StackViewLayout,support left and right.**
 
-### captured images
-The following pictures were captured earlier. Since the source code and the outputted-apk have changed some params, you will have a different UI when you directly run the code or install the apk file. Hope there has no confusions later.  <br><br>
-<img src="capture/capture1.gif" width="360" height="645"/> <img src="capture/capture2.gif" width="360" height="645"/> 
+**层叠随手势滑动，带轮播自定义ViewGroup**
 
-### design
-Recently I have seen this kind of UI design, and at the first sight I was trying to implement it by using RecyclerView's LayoutManager. Unfortunately, I am unable to contrust a clear Math model while sliding the PileView. After several tries, I gave up LayoutManager, and find another way for this implementation. If you make LayoutManager works well for this UI design, please tell me later.
+### Captures
 
-### how to use
-1. declare PileLayout in your xml file
-``` xml
-<com.stone.pile.libs.PileLayout
-        android:id="@+id/pileLayout"
+![效果图](/pic/pic001.jpeg)
+![效果图](/pic/demo20.gif)
+
+### Use
+    implementation 'com.uis:stacklayout:0.1.0'
+
+*Name*| *Descript*|*Value*
+  -----|--------|---
+stackSpace|间距|默认值：10dp
+stackEdge|边界距离|默认值：10dp
+stackZoomX|x方向缩放| 0<x<=1,1表示等间距，默认值：1
+stackPadX|x方向偏移|表示偏移间距,默认值：0
+stackPadX|PadX*(Size-1) < Space|PadX优先级高于ZoomX
+stackZoomY|y方向缩放| 0<y<=1,1表示和顶层等高度，默认值：0.9
+stackLooper|自动轮播|false/true
+stackSize|层叠数量|3
+stackEdgeModel|层叠位置|left/right
+   
+```Xml
+    <?xml version="1.0" encoding="utf-8"?>
+    <com.uis.stackview.StackLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:stack="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/stacklayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="5dp"
-        android:paddingTop="5dp"
-        pile:displayCount="1.5"
-        pile:interval="10dp"
-        pile:scaleStep="0.22"
-        pile:widthHeightRate="1.22" />
+        stack:stackSpace="5dp"
+        stack:stackEdge="20dp"
+        stack:stackZoomX="0.1"
+        stack:stackZoomY="0.1"
+        stack:stackLooper = "false"
+        stack:stackSize = "5"
+        stack:stackEdgeModel = "left">
+    </com.uis.stackview.StackLayout>
 ```
-Meanwhile, pileLayout is able to be customized by these 4 params:
 
-|name|format|description|
-|:---:|:---:|:---:|
-| interval | dimension |items-margin each other
-| sizeRatio | float |each item's height/witdth
-| scaleStep | float |size scale step when needed
-| displayCount | float |number of items that may display
-
-2. in Java files:
-``` java
-pileLayout = (PileLayout) findViewById(R.id.pileLayout);
-pileLayout.setAdapter(new PileLayout.Adapter() {
+```Java
+        stackViewLayout.setStackLooper(true);
+        stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
-            public int getLayoutId() {
-                // item's layout resource id
-                return R.layout.item_layout;
+            public View onCreateView(ViewGroup parent) {
+                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_fresco_layout,null);
             }
 
             @Override
-            public void bindView(View view, int position) {
-                ViewHolder viewHolder = (ViewHolder) view.getTag();
+            public void onBindView(View view, int position) {
+                StackAdapter.ViewHolder viewHolder = (StackAdapter.ViewHolder) view.getTag();
                 if (viewHolder == null) {
-                    viewHolder = new ViewHolder();
-                    viewHolder.imageView = (ImageView) view.findViewById(R.id.imageView);
+                    viewHolder = new StackAdapter.ViewHolder();
+                    viewHolder.dv = view.findViewById(R.id.imageView);
                     view.setTag(viewHolder);
                 }
-                // recycled view bind new position
+                DraweeController controller = Fresco.newDraweeControllerBuilder()
+                        .setUri(Uri.parse(dataList.get(position).getCoverImageUrl()))
+                        .setTapToRetryEnabled(true)
+                        .setOldController(viewHolder.dv.getController())
+                        .build();
+                viewHolder.dv.setController(controller);
             }
 
             @Override
             public int getItemCount() {
-                // item count
                 return dataList.size();
             }
 
             @Override
-            public void displaying(int position) {
-                // right displaying the left biggest itemView's position 
+            public void onItemDisplay(int position) {
+                Log.e("xx","display = " + position);
             }
 
             @Override
-            public void onItemClick(View view, int position) {
-                // on item click
+            public void onItemClicked(int position) {
+                Log.e("xx","clicked = " + position);
+                stackViewLayout.setStackLooper(false);
+                stackViewLayout.setPosition(position+3);
             }
-});
+        });
+        stackViewLayout.setPosition(10);
 ```
 
-### demo apk
-[download](capture/app-debug.apk)
+### Version
+*Version*| *Descript*|*Fixed*
+----|----|----
+0.0.1|自动轮播，滑动从顶部移除，整体上浮|初始版本
+0.0.2|滑动从顶层加入，整体下沉|内部view点击事件
+0.1.0|zoomX,zoomY呈等比数列|更改属性
 
-## License
+### Thanks
 
-    Copyright 2017, xmuSistone
+[AndroidPileLayout](https://github.com/xmuSistone/AndroidPileLayout)
+### License
+
+    Copyright 2018, uis
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.uis.stackview.StackViewLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.uis.stackview.StackLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:stack="http://schemas.android.com/apk/res-auto"
     android:id="@+id/stacklayout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="150dp"
     stack:stackSpace="15dp"
-    stack:stackEdge="20dp"
-    stack:stackZoom="0.08"
-    stack:stackLooper = "true"
+    stack:stackEdge="10dp"
+    stack:stackZoomX="1"
+    stack:stackPadX="5dp"
+    stack:stackZoomY="0.9"
+    stack:stackLooper = "false"
     stack:stackSize = "3"
     stack:stackEdgeModel = "right">
-</com.uis.stackview.StackViewLayout>
+</com.uis.stackview.StackLayout>
