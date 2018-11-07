@@ -9,7 +9,7 @@
 ![效果图](/pic/demo20.gif)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.1.0'
+    implementation 'com.uis:stacklayout:0.1.1'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -88,8 +88,9 @@ stackEdgeModel|层叠位置|left/right
 *Version*| *Descript*|*Fixed*
 ----|----|----
 0.0.1|自动轮播，滑动从顶部移除，整体上浮|初始版本
-0.0.2|滑动从顶层加入，整体下沉|内部view点击事件
+0.0.2|滑动从顶层加入，整体下沉|fixed 内部view点击事件
 0.1.0|zoomX,zoomY呈等比数列|更改属性
+0.1.1|只有一条数据时|fixed
 
 ### Thanks
 

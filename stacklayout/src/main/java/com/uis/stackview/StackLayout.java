@@ -75,6 +75,9 @@ public class StackLayout extends ViewGroup{
         int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec) ? width/2
                 : getDefaultSize(getSuggestedMinimumHeight(),heightMeasureSpec);
+        if(!isInEditMode() && (adapter == null || adapter.getItemCount() == 0)){
+            height = 0;
+        }
         setMeasuredDimension(width,height);
         if(adapter != null) {
             stackHelper.measureChild(width,height);
