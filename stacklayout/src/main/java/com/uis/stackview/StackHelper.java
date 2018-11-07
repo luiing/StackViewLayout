@@ -101,7 +101,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         if(needRelayout && layout != null) {
             needRelayout = false;
             int childSize = layout.getChildCount();
-            int stackSize = layout.stackSize;
+            int stackSize = layout.getRealStackSize();
             int realSize = layout.getRealStackSize();
             for (int i = 0; i < childSize; i++) {
                 int top, bottom, left, right, pivot;
@@ -301,9 +301,10 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     /** 加入底层 */
     private void addBottomView(){
         int cnt = layout.getAdapter().getItemCount();
+        int stackSize = layout.getRealStackSize();
         displayPosition += 1;
         displayPosition %= cnt;
-        int index = (layout.stackSize - 1 + displayPosition) % cnt;
+        int index = (stackSize - 1 + displayPosition) % cnt;
         View view = getStackView();
         layout.getAdapter().onBindView(view, index);
         needRelayout = true;
