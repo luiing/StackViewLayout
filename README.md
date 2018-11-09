@@ -9,19 +9,19 @@
 ![效果图](/pic/demo20.gif)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.0.2'
+    implementation 'com.uis:stacklayout:0.1.1'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
-stackSpace|间距|10dp
-stackEdge|边界距离|10dp
-stackZoomX|x方向缩放| 0.0-2.0
-stackZoomY|y方向缩放|0.0-0.2
+stackSpace|间距|默认值：10dp
+stackEdge|边界距离|默认值：10dp
+stackZoomX|x方向缩放| 0<x<=1,1表示等间距，默认值：1
+stackPadX|x方向偏移|表示偏移间距,默认值：0
+stackPadX|PadX*(Size-1) < Space|PadX优先级高于ZoomX
+stackZoomY|y方向缩放| 0<y<=1,1表示和顶层等高度，默认值：0.9
 stackLooper|自动轮播|false/true
 stackSize|层叠数量|3
 stackEdgeModel|层叠位置|left/right
-
-
    
 ```Xml
     <?xml version="1.0" encoding="utf-8"?>
@@ -88,7 +88,9 @@ stackEdgeModel|层叠位置|left/right
 *Version*| *Descript*|*Fixed*
 ----|----|----
 0.0.1|自动轮播，滑动从顶部移除，整体上浮|初始版本
-0.0.2|滑动从顶层加入，整体下沉|内部view点击事件
+0.0.2|滑动从顶层加入，整体下沉|fixed 内部view点击事件
+0.1.0|zoomX,zoomY呈等比数列|更改属性
+0.1.1|只有一条数据时|fixed
 
 ### Thanks
 
