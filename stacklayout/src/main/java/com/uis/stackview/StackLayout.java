@@ -137,6 +137,22 @@ public class StackLayout extends ViewGroup{
         stackHelper.setPosition(position);
     }
 
+    public int getSelectedPosition(){
+        return stackHelper.getPosition();
+    }
+
+    public void setDuration(int duration){
+        stackHelper.setDuration(duration);
+    }
+
+    /**
+     * looper delay
+     * @param mills 1000 is 1 second
+     */
+    public void setLooperDelay(int mills){
+        stackHelper.setLooperDelay(mills);
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
         //stackHelper.log("act="+event.getActionMasked());
@@ -225,9 +241,7 @@ public class StackLayout extends ViewGroup{
 
         public abstract void onBindView(View view, int index);
 
-        public int getItemCount(){
-            return 0;
-        }
+        public abstract int getItemCount();
 
         public void onItemDisplay(int position) {
         }
