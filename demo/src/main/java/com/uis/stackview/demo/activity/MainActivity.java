@@ -1,12 +1,16 @@
 package com.uis.stackview.demo.activity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.facebook.common.logging.FLog;
@@ -23,7 +27,7 @@ import java.util.List;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import android.view.WindowManager;
 /**
  * Created by xmuSistone on 2017/5/12.
  */
@@ -35,8 +39,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if(Build.VERSION.SDK_INT >= 19){
+            if(Build.VERSION.SDK_INT >= 23){
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                getWindow().setStatusBarColor(Color.TRANSPARENT);
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        //只有白色背景需加上此flag
+                        |View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                );
+            }else {
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            }
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if(Build.VERSION.SDK_INT >= 19){
+            ViewGroup.LayoutParams params = findViewById(R.id.view).getLayoutParams();
+            params.height = getResources().getDimensionPixelSize(R.dimen.status_height);
+        }
         FLog.setMinimumLoggingLevel(FLog.VERBOSE);
         if(!Fresco.hasBeenInitialized()) {
             ImagePipelineConfig config = ImagePipelineConfig.newBuilder(getApplicationContext())

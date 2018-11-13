@@ -9,7 +9,7 @@
 ![效果图](/pic/demo20.gif)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.1.1'
+    implementation 'com.uis:stacklayout:0.1.2'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -91,6 +91,7 @@ stackEdgeModel|层叠位置|left/right
 0.0.2|滑动从顶层加入，整体下沉|fixed 内部view点击事件
 0.1.0|zoomX,zoomY呈等比数列|更改属性
 0.1.1|只有一条数据时|fixed
+0.1.2|增加动画、轮播时间设置，获取当前选中位置|新增方法
 
 ### Thanks
 

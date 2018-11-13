@@ -5,8 +5,10 @@
     android:layout_height="match_parent"
     android:background="#fff"
     android:orientation="vertical">
+    <View android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"/>
     <include layout="@layout/stack_right"/>
-
     <Button android:id="@+id/bt_web"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
