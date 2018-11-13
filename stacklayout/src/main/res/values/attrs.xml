@@ -2,6 +2,7 @@
 <resources>
     <declare-styleable name="StackLayout">
         <attr name="stackSpace" format="dimension" />
+        <attr name="stackPadX" format="dimension" />
         <attr name="stackZoomX" format="float" />
         <attr name="stackZoomY" format="float" />
         <attr name="stackLooper" format="boolean"/>

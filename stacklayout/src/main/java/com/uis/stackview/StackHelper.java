@@ -70,8 +70,12 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                 float stackSpaces = 0;
                 everyHeight = height - layout.getPaddingTop() - layout.getPaddingBottom();
                 originX.add(layout.stackEdge);
+                int padX = layout.stackPadX;
+                if(padX*(size-1) > layout.stackSpace){
+                    padX = 0;
+                }
                 for (int i = 1; i < size; i++) {
-                    int stackSpace = (int)(layout.stackSpace /(1+layout.stackZoomX*(size-1-i)));
+                    int stackSpace = (int)((layout.stackSpace-padX*(size-1-i))*Math.pow(layout.stackZoomX,(size-1-i)));
                     stackSpaces += stackSpace;
                     originX.add(originX.get(i - 1) + stackSpace);
                 }
@@ -97,7 +101,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         if(needRelayout && layout != null) {
             needRelayout = false;
             int childSize = layout.getChildCount();
-            int stackSize = layout.stackSize;
+            int stackSize = layout.getRealStackSize();
+            int realSize = layout.getRealStackSize();
             for (int i = 0; i < childSize; i++) {
                 int top, bottom, left, right, pivot;
                 View view = layout.getChildAt(i);
@@ -117,7 +122,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                     view.setPivotX(pivot);
                     view.setPivotY(everyHeight / 2);
                     view.layout(left, top, right, bottom);
-                    view.setScaleY(getChildScale(i, layout.stackZoomY));
+                    view.setScaleY((float) Math.pow(layout.stackZoomY,realSize-1-i));
                     if(view.getTranslationX() != 0f){
                         if(i+1 < stackSize){
                             view.setTranslationX(0);
@@ -191,11 +196,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             view.setScaleY(1f);
             weakViews.add(new WeakReference<>(view));
         }
-    }
-
-    private float getChildScale(int index,float zoom) {
-        int rate = layout.getRealStackSize() -1 - index;
-        return (float) Math.pow(1.0f - zoom,rate);
     }
 
     /**
@@ -301,9 +301,10 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     /** 加入底层 */
     private void addBottomView(){
         int cnt = layout.getAdapter().getItemCount();
+        int stackSize = layout.getRealStackSize();
         displayPosition += 1;
         displayPosition %= cnt;
-        int index = (layout.stackSize - 1 + displayPosition) % cnt;
+        int index = (stackSize - 1 + displayPosition) % cnt;
         View view = getStackView();
         layout.getAdapter().onBindView(view, index);
         needRelayout = true;

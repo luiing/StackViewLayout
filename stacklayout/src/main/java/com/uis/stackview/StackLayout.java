@@ -24,10 +24,11 @@ public class StackLayout extends ViewGroup{
     int stackSpace = 10;
     /** 层叠视图边距 */
     int stackEdge = 0;
-    /** 层叠递减倍数 0.0-2.0*/
-    float stackZoomX = 0.1f;
-    /** 层叠缩放比例 0.0-0.2*/
-    float stackZoomY = 0.1f;
+    /** 层叠递减倍数 >0*/
+    float stackZoomX = 1f;
+    int stackPadX = 0;
+    /** 层叠缩放比例 >0*/
+    float stackZoomY = 0.9f;
     /** 层叠显示数量 */
     int stackSize = 3;
     /** 自动轮播 */
@@ -58,6 +59,7 @@ public class StackLayout extends ViewGroup{
         stackSpace =  (int)type.getDimension(R.styleable.StackLayout_stackSpace, stackSpace);
         stackEdge = (int)type.getDimension(R.styleable.StackLayout_stackEdge,stackEdge);
         stackZoomX = type.getFloat(R.styleable.StackLayout_stackZoomX, stackZoomX);
+        stackPadX = (int)type.getDimension(R.styleable.StackLayout_stackPadX,stackPadX);
         stackZoomY = type.getFloat(R.styleable.StackLayout_stackZoomY, stackZoomY);
         stackSize = type.getInteger(R.styleable.StackLayout_stackSize,stackSize);
         stackLooper = type.getBoolean(R.styleable.StackLayout_stackLooper,stackLooper);
@@ -73,6 +75,9 @@ public class StackLayout extends ViewGroup{
         int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec) ? width/2
                 : getDefaultSize(getSuggestedMinimumHeight(),heightMeasureSpec);
+        if(!isInEditMode() && (adapter == null || adapter.getItemCount() == 0)){
+            height = 0;
+        }
         setMeasuredDimension(width,height);
         if(adapter != null) {
             stackHelper.measureChild(width,height);
