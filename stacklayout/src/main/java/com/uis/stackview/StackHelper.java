@@ -44,11 +44,14 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     private boolean isFingerTouch = false;
     private boolean enableScroll = false;
     private int displayPosition = 0;
+    private int mDuration = 500;
+    private int mDelay = 3000;
     private StackLayout layout;
-    private boolean debug = false;
+    private boolean debug = true;
 
     StackHelper(int touchSlop) {
         mTouchSlop = touchSlop;
+        mAnimator.setDurations(mDuration);
     }
 
     void bindLayout(StackLayout layout) {
@@ -169,6 +172,19 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         }
     }
 
+    int getPosition(){
+        return displayPosition;
+    }
+
+    void setDuration(int duration){
+        mDuration = duration;
+        mAnimator.setDurations(mDuration);
+    }
+
+    void setLooperDelay(int mills){
+        mDelay = mills;
+    }
+
     private View getStackView(){
         View view = null;
         for (WeakReference<View> item ;weakViews.size() > 0;){
@@ -254,21 +270,22 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         float transX = mAnimator.getTranslationX();
         if(layout.getAdapter() != null && Math.abs(transX) > 0 && !mAnimator.isRunning()) {
             //滑动速度大于限定或者滑动距离大于宽度一部分，移出当前视图可视范围
-            if(Math.abs(velocity) >= everyWidth || Math.abs(transX) > mMaxDistance){
-                int sign = MODEL_LEFT == swipModel ? -1 : 1;
+            int sign = MODEL_LEFT == swipModel ? -1 : 1;
+            /** 加入防抖动 */
+            if( (velocity*sign>=0 || Math.abs(velocity)<3*mTouchSlop) && (Math.abs(velocity) >= everyWidth|| Math.abs(transX) > mMaxDistance)){
                 if(isTopRemove){
                     addBottomView();
                     transX = layout.getWidth()*sign - transX;
-                    mAnimator.startAnimator(true,false,transX,mMaxDistance,this);
+                    mAnimator.startAnimator(true,false,transX,this);
                 }else{
                     removeBottomView();
                     transX = everyWidth*sign - transX;
-                    mAnimator.startAnimator(false,false,transX,mMaxDistance,this);
+                    mAnimator.startAnimator(false,false,transX,this);
                 }
             }else {
                 //取反恢复原样
                 transX *= -1;
-                mAnimator.startAnimator(!isTopRemove,false,transX,mMaxDistance,this);
+                mAnimator.startAnimator(!isTopRemove,false,transX,this);
             }
             swipModel = MODEL_NONE;
         }
@@ -279,7 +296,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             mAnimator.setAnimatorView(layout.getChildAt(layout.getChildCount() - 1));
             int transX = (layout.stackEdgeModel == MODEL_LEFT ? 1 : -1)*layout.getWidth();
             isTopRemove = true;
-            mAnimator.startAnimator(true,true,transX,mMaxDistance,this);
+            mAnimator.startAnimator(true,true,transX,this);
         }
     }
 
@@ -289,7 +306,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                 executor = new ScheduledThreadPoolExecutor(2);
             }
             if(executor.getQueue().size() <= 0) {
-                executor.scheduleWithFixedDelay(new AutoRunnable(this), 2, 3, TimeUnit.SECONDS);
+                executor.scheduleWithFixedDelay(new AutoRunnable(this), 2000, mDelay, TimeUnit.MILLISECONDS);
             }
         }else {
             if(executor != null && !executor.isShutdown()) {
@@ -359,6 +376,16 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         private Interpolator interpolatorAuto = new LinearInterpolator();
         private boolean needRemoveTopView = false;
         private boolean needAddBottomView;
+        private int duration;
+        private int mWidth;
+
+        public ReleaseAnimator() {
+            mWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        }
+
+        void setDurations(int duration){
+            this.duration = duration;
+        }
 
         void setAnimatorView(View view){
             mAnimatorView = view;
@@ -388,11 +415,11 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             lastValue = value;
         }
 
-        void startAnimator(boolean needRemoveTop,boolean needAddBottom,float transX, int distance, ValueAnimator.AnimatorUpdateListener listener){
-            int duration = needAddBottom ? 400 : (int)(Math.abs(transX)/distance*100);
+        void startAnimator(boolean needRemoveTop,boolean needAddBottom,float transX, ValueAnimator.AnimatorUpdateListener listener){
+            int mills = needAddBottom ? duration : (int)(1.2*duration*Math.abs(transX)/mWidth);
             needAddBottomView = needAddBottom;
             needRemoveTopView = needRemoveTop;
-            animator = ValueAnimator.ofFloat(0f, transX).setDuration(duration);
+            animator = ValueAnimator.ofFloat(0f, transX).setDuration(mills);
             animator.setInterpolator(needAddBottom ? interpolatorAuto : interpolator);
             animator.addUpdateListener(listener);
             animator.start();
