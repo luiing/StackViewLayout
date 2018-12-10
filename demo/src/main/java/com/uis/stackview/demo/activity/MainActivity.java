@@ -28,6 +28,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.view.WindowManager;
+import androidx.viewpager.widget.ViewPager;
+
 /**
  * Created by xmuSistone on 2017/5/12.
  */
@@ -72,6 +74,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.bt_app).setOnClickListener(this);
 
         dataList = StackAdapter.initDataList(this);
+        ViewPager viewPager = findViewById(R.id.viewPager);
+        ViewPagerAdapter adapter = new ViewPagerAdapter(dataList);
+        viewPager.setAdapter(adapter);
+        viewPager.setCurrentItem(adapter.getRealSize());
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StackAdapter());
@@ -99,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
                 DraweeController controller = Fresco.newDraweeControllerBuilder()
-                        .setUri(Uri.parse(dataList.get(position).getCoverImageUrl()))
+                        .setUri(Uri.parse(dataList.get(position).getMapImageUrl()))
                         .setTapToRetryEnabled(true)
                         .setOldController(viewHolder.dv.getController())
                         .build();

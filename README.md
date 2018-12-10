@@ -4,7 +4,7 @@
 **层叠随手势滑动，带轮播自定义ViewGroup**
 
 ### Captures
-
+![效果图](/pic/002.png)
 ![效果图](/pic/pic001.jpeg)
 ![效果图](/pic/demo20.gif)
 
