@@ -8,6 +8,15 @@
     <View android:id="@+id/view"
         android:layout_width="match_parent"
         android:layout_height="0dp"/>
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:clipChildren="true"
+        android:clipToPadding="false"
+        android:paddingRight="80dp"
+        >
+    </androidx.viewpager.widget.ViewPager>
     <include layout="@layout/stack_right"/>
     <Button android:id="@+id/bt_web"
         android:layout_width="match_parent"
@@ -21,7 +30,6 @@
         android:text="app"
         android:visibility="gone"
         />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
