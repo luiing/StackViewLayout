@@ -61,13 +61,21 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         setAutoPlay(this.layout.stackLooper);
     }
 
+    int getItemCount(){
+        int cnt = 0;
+        if(layout != null && layout.getAdapter() != null){
+            cnt = layout.getAdapter().getItemCount();
+        }
+        return cnt;
+    }
+
     void unbindLayout() {
         setAutoPlay(false);
     }
 
     void measureChild(int width,int height){
         //log("measue...");
-        if(layout != null && layout.getAdapter() != null && layout.getAdapter().getItemCount() > 0 ){
+        if(getItemCount() > 0 ){
             int size = layout.getRealStackSize();
             if(originX.isEmpty()) {
                 float stackSpaces = 0;
@@ -305,7 +313,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             if(executor == null || executor.isShutdown()){
                 executor = new ScheduledThreadPoolExecutor(2);
             }
-            if(executor.getQueue().size() <= 0) {
+            if(executor.getQueue().size() <= 0 && getItemCount() > 1) {
                 executor.scheduleWithFixedDelay(new AutoRunnable(this), 2000, mDelay, TimeUnit.MILLISECONDS);
             }
         }else {
@@ -317,7 +325,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     /** 加入底层 */
     private void addBottomView(){
-        int cnt = layout.getAdapter().getItemCount();
+        int cnt = getItemCount();
         int stackSize = layout.getRealStackSize();
         displayPosition += 1;
         displayPosition %= cnt;
@@ -331,7 +339,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     /** 加入顶层 */
     private View addTopView(){
-        int cnt = layout.getAdapter().getItemCount();
+        int cnt = getItemCount();
         int position = displayPosition - 1;
         if(position < 0){
             position += cnt;
@@ -345,7 +353,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     /** 移除底层 */
     private void removeBottomView(){
-        int cnt = layout.getAdapter().getItemCount();
+        int cnt = getItemCount();
         displayPosition -= 1;
         if(displayPosition < 0){
             displayPosition += cnt;
@@ -447,7 +455,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
         @Override
         public void run() {
-            if(helper.layout != null && helper.layout.getAdapter() != null && helper.layout.getChildCount() > 0){
+            if(helper.getItemCount() > 1 && helper.layout.getChildCount() > 0){
                 final StackLayout stack = helper.layout;
                 int[] points = new int[2];
                 stack.getLocationInWindow(points);
