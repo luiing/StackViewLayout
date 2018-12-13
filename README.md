@@ -9,7 +9,7 @@
 ![效果图](/pic/demo20.gif)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.1.2'
+    implementation 'com.uis:stacklayout:0.2.0'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -81,8 +81,7 @@ stackEdgeModel|层叠位置|left/right
                 stackViewLayout.setPosition(position+3);
             }
         });
-        stackViewLayout.setPosition(10);
-        //装载异步数据需要调用 stackViewLayout.notifyDataChanged();
+        stackViewLayout.setPosition(10);//指定位置
 ```
 
 ### Version
@@ -93,6 +92,7 @@ stackEdgeModel|层叠位置|left/right
 0.1.0|zoomX,zoomY呈等比数列|更改属性
 0.1.1|只有一条数据时|fixed
 0.1.2|增加动画、轮播时间设置，获取当前选中位置|新增方法
+0.2.0|只有一个元素，不支持轮播和滑动|新增功能
 
 ### Thanks
 
