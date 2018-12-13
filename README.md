@@ -82,6 +82,7 @@ stackEdgeModel|层叠位置|left/right
             }
         });
         stackViewLayout.setPosition(10);
+        //装载异步数据需要调用 stackViewLayout.notifyDataChanged();
 ```
 
 ### Version
