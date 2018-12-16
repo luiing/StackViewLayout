@@ -123,6 +123,7 @@ public class StackLayout extends ViewGroup{
     public void setAdapter(StackAdapter adapter) {
         this.adapter = adapter;
         removeAllViewsInLayout();
+        notifyDataChanged();
     }
 
     public StackAdapter getAdapter(){
@@ -188,20 +189,24 @@ public class StackLayout extends ViewGroup{
                 stackHelper.fingerTouchDown();
                 break;
             case MotionEvent.ACTION_MOVE:
-                if(stackHelper.canScroll(downX,downY,event.getX(),event.getY())) {
-                    int currentX = (int) event.getX();
-                    int dx = (int) (currentX - lastX);
-                    stackHelper.executeScroll(dx);
-                    lastX = currentX;
+                if(adapter != null && adapter.getItemCount() > 1) {
+                    if (stackHelper.canScroll(downX, downY, event.getX(), event.getY())) {
+                        int currentX = (int) event.getX();
+                        int dx = (int) (currentX - lastX);
+                        stackHelper.executeScroll(dx);
+                        lastX = currentX;
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
                 handleItemClicked();
             case MotionEvent.ACTION_CANCEL:
-                mVelocity.computeCurrentVelocity(1000, mMaximumVelocity);
-                int velocity = (int) mVelocity.getXVelocity();
-                stackHelper.releaseScroll(velocity);
-                recycleVelocityTracker();
+                if(adapter != null && adapter.getItemCount() > 1) {
+                    mVelocity.computeCurrentVelocity(1000, mMaximumVelocity);
+                    int velocity = (int) mVelocity.getXVelocity();
+                    stackHelper.releaseScroll(velocity);
+                    recycleVelocityTracker();
+                }
                 default:
         }
         return  true;
