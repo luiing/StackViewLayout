@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.widget.FrameLayout;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -203,12 +202,9 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             }
         }
         if (view == null && layout != null && layout.getAdapter() != null){
-            FrameLayout frame = new FrameLayout(layout.getContext());
-            View createView = layout.getAdapter().onCreateView(layout);
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(everyWidth, everyHeight);
-            frame.addView(createView,params);
-            frame.measure(everyWidth,everyHeight);
-            view = frame;
+            view = layout.getAdapter().onCreateView(layout);
+            view.measure(View.MeasureSpec.makeMeasureSpec(everyWidth,View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(everyHeight,View.MeasureSpec.EXACTLY));
         }
         return view;
     }

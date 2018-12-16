@@ -99,15 +99,9 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
                 @Override
                 public void onBindView(View view, int position) {
-                    ViewHolder viewHolder = (ViewHolder) view.getTag();
-                    if (viewHolder == null) {
-                        viewHolder = new ViewHolder();
-                        viewHolder.imageView = view.findViewById(R.id.imageView);
-                        view.setTag(viewHolder);
-                    }
-                    //Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
+                    ImageView imageView = view.findViewById(R.id.imageView);
                     try{
-                        Glide.with(view.getContext()).load(dataList.get(position).getMapImageUrl()).into(viewHolder.imageView);
+                        Glide.with(view.getContext()).load(dataList.get(position).getMapImageUrl()).into(imageView);
                     }catch (Exception ex){
                         ex.printStackTrace();
                     }
