@@ -9,7 +9,7 @@
 ![效果图](/pic/demo20.gif)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.2.0'
+    implementation 'com.uis:stacklayout:0.2.1'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -50,18 +50,13 @@ stackEdgeModel|层叠位置|left/right
 
             @Override
             public void onBindView(View view, int position) {
-                StackAdapter.ViewHolder viewHolder = (StackAdapter.ViewHolder) view.getTag();
-                if (viewHolder == null) {
-                    viewHolder = new StackAdapter.ViewHolder();
-                    viewHolder.dv = view.findViewById(R.id.imageView);
-                    view.setTag(viewHolder);
-                }
+                SimpleDraweeView dv = view.findViewById(R.id.imageView);
                 DraweeController controller = Fresco.newDraweeControllerBuilder()
-                        .setUri(Uri.parse(dataList.get(position).getCoverImageUrl()))
+                        .setUri(Uri.parse(dataList.get(position).getMapImageUrl()))
                         .setTapToRetryEnabled(true)
-                        .setOldController(viewHolder.dv.getController())
+                        .setOldController(dv.getController())
                         .build();
-                viewHolder.dv.setController(controller);
+                dv.setController(controller);
             }
 
             @Override
@@ -93,6 +88,7 @@ stackEdgeModel|层叠位置|left/right
 0.1.1|只有一条数据时|fixed
 0.1.2|增加动画、轮播时间设置，获取当前选中位置|新增方法
 0.2.0|只有一个元素，不支持轮播和滑动|新增功能
+0.2.1|减少child层级,见child.measure()|新增功能
 
 ### Thanks
 
