@@ -17,6 +17,7 @@ import com.facebook.common.logging.FLog;
 import com.facebook.common.logging.LoggingDelegate;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.google.gson.Gson;
 import com.uis.stackview.StackLayout;
@@ -91,25 +92,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onBindView(View view, int position) {
-                StackAdapter.ViewHolder viewHolder = (StackAdapter.ViewHolder) view.getTag();
-                if (viewHolder == null) {
-                    viewHolder = new StackAdapter.ViewHolder();
-                    viewHolder.dv = view.findViewById(R.id.imageView);
-                    view.setTag(viewHolder);
-                    viewHolder.dv.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Log.e("xx","dv clicked ...");
-                        }
-                    });
-                }
-                Log.e("xx","binderVH: " + position + ",data: " + new Gson().toJson(dataList.get(position)));
+                SimpleDraweeView dv = view.findViewById(R.id.imageView);
                 DraweeController controller = Fresco.newDraweeControllerBuilder()
                         .setUri(Uri.parse(dataList.get(position).getMapImageUrl()))
                         .setTapToRetryEnabled(true)
-                        .setOldController(viewHolder.dv.getController())
+                        .setOldController(dv.getController())
                         .build();
-                viewHolder.dv.setController(controller);
+                dv.setController(controller);
             }
 
             @Override
