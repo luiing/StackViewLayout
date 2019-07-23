@@ -2,8 +2,6 @@ package com.uis.stackview;
 
 import android.animation.ValueAnimator;
 import android.content.res.Resources;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
@@ -46,7 +44,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     private int mDuration = 500;
     private int mDelay = 3000;
     private StackLayout layout;
-    private boolean debug = true;
 
     StackHelper(int touchSlop) {
         mTouchSlop = touchSlop;
@@ -70,10 +67,10 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     void unbindLayout() {
         setAutoPlay(false);
+        mAnimator.cancelAnimator();
     }
 
     void measureChild(int width,int height){
-        //log("measue...");
         if(getItemCount() > 0 ){
             int size = layout.getRealStackSize();
             if(originX.isEmpty()) {
@@ -107,12 +104,11 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     void layoutChild(){
-        //log("layout..."+layout.getChildCount());
         if(needRelayout && layout != null) {
             needRelayout = false;
             int childSize = layout.getChildCount();
             int stackSize = layout.getRealStackSize();
-            int realSize = layout.getRealStackSize();
+
             for (int i = 0; i < childSize; i++) {
                 int top, bottom, left, right, pivot;
                 View view = layout.getChildAt(i);
@@ -130,16 +126,13 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                         pivot = layout.getWidth() - layout.stackEdge;
                     }
                     view.setPivotX(pivot);
-                    view.setPivotY(everyHeight / 2);
-                    view.layout(left, top, right, bottom);
-                    view.setScaleY((float) Math.pow(layout.stackZoomY,realSize-1-i));
-                    if(view.getTranslationX() != 0f){
-                        if(i+1 < stackSize){
-                            view.setTranslationX(0);
-                        }else if(i+1 == stackSize && childSize == stackSize){//恢复stackSize时，补偿距离
-                            float distance = layout.stackEdgeModel == MODEL_RIGHT ? -everyWidth : everyWidth;
-                            view.setTranslationX(view.getTranslationX()+distance);
-                        }
+                    view.setPivotY(everyHeight/2f);
+                    if(mAnimator.isRunning() && i > 0){
+
+                    }else{
+                        view.layout(left, top, right, bottom);
+                        view.setScaleY((float) Math.pow(layout.stackZoomY,stackSize-1-i));
+                        view.setTranslationX(0);
                     }
                 }else if(!isTopRemove){//顶层加入
                     if (layout.stackEdgeModel == MODEL_LEFT) {
@@ -263,6 +256,24 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                 view = mAnimator.mAnimatorView;
             }
             view.setTranslationX(view.getTranslationX() + 1.0f*everyWidth/layout.getWidth() * dx);
+            scaleTransChild(dx);
+        }
+    }
+
+    void scaleTransChild(int dx){
+        int first = layout.getChildCount()>layout.stackSize ? 1 : 0;
+        int size = layout.getChildCount()-1;
+        int stackSize = layout.stackSize;
+        for(int i = first; i<size; i++){
+            View v = layout.getChildAt(i);
+            int sign = MODEL_LEFT == layout.stackEdgeModel ? 1 : -1;
+            float rate = 1f*dx/layout.getWidth();
+            int tx = originX.get(i-first+1)-originX.get(i-first);
+            v.setTranslationX(v.getTranslationX() + rate*tx);
+
+            double scaley = Math.pow(layout.stackZoomY,stackSize-2-i);
+            double scale = Math.pow(layout.stackZoomY,stackSize-1-i);
+            v.setScaleY(v.getScaleY()+(float)(sign*rate*(scaley-scale)));
         }
     }
 
@@ -307,7 +318,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     void setAutoPlay(boolean looper){
         if(looper) {
             if(executor == null || executor.isShutdown()){
-                executor = new ScheduledThreadPoolExecutor(2);
+                executor = new ScheduledThreadPoolExecutor(1);
             }
             if(executor.getQueue().size() <= 0 && getItemCount() > 1) {
                 executor.scheduleWithFixedDelay(new AutoRunnable(this), 2000, mDelay, TimeUnit.MILLISECONDS);
@@ -316,6 +327,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             if(executor != null && !executor.isShutdown()) {
                 executor.shutdownNow();
             }
+
         }
     }
 
@@ -354,7 +366,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         if(displayPosition < 0){
             displayPosition += cnt;
         }
-        needRelayout = true;
+        //needRelayout = true;
         View view = layout.getChildAt(0);
         removeStackView(view);
         layout.getAdapter().onItemDisplay(displayPosition);
@@ -363,10 +375,15 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     @Override
     public void onAnimationUpdate(ValueAnimator animation) {
         float animateValue = (float) animation.getAnimatedValue();
+        float lastValue = mAnimator.getTranslationX();
         float fraction = animation.getAnimatedFraction();
         mAnimator.setTranslationX(animateValue);
+        scaleTransChild((int)(mAnimator.getTranslationX()-lastValue));
         if (fraction >= 1.0f) {
             mAnimator.endAnimator(this);
+            needRelayout = true;
+            layout.requestLayout();
+
         } else if(fraction > 0.2 && mAnimator.needAddBottomView()){
             addBottomView();
         }
@@ -429,8 +446,16 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             animator.start();
         }
 
+        void cancelAnimator(){
+            if(animator != null){
+                animator.removeAllUpdateListeners();
+                animator.cancel();
+                endAnimator(null);
+            }
+        }
+
         void endAnimator(StackHelper helper){
-            if(needRemoveTopView) {
+            if(needRemoveTopView && helper != null) {
                 helper.removeStackView(mAnimatorView);
             }
             animator.removeAllUpdateListeners();
@@ -442,22 +467,26 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     static class AutoRunnable implements Runnable{
-        static Handler mHandler = new Handler(Looper.getMainLooper());
-        StackHelper helper;
+        WeakReference<StackHelper> weakHelper;
 
         AutoRunnable(StackHelper stack) {
-            this.helper = stack;
+            weakHelper = new WeakReference<>(stack);
         }
 
         @Override
         public void run() {
-            if(helper.getItemCount() > 1 && helper.layout.getChildCount() > 0){
-                final StackLayout stack = helper.layout;
-                int[] points = new int[2];
-                stack.getLocationInWindow(points);
-                if(points[1] < Resources.getSystem().getDisplayMetrics().heightPixels){
-                    mHandler.post(new AutoScrollRunnable(helper));
+            try {
+                StackHelper helper = weakHelper.get();
+                if (helper != null && helper.getItemCount() > 1 && helper.layout.getChildCount() > 0) {
+                    StackLayout stack = helper.layout;
+                    int[] points = new int[2];
+                    stack.getLocationInWindow(points);
+                    if (points[1] < Resources.getSystem().getDisplayMetrics().heightPixels) {
+                        stack.getHandler().post(new AutoScrollRunnable(helper));
+                    }
                 }
+            }catch (Throwable ex){
+                ex.printStackTrace();
             }
         }
     }
@@ -488,10 +517,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     void log(String msg){
-        if(debug) {
-            StackTraceElement element = Thread.currentThread().getStackTrace()[3];
-            Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),
-                    element.getMethodName(), element.getLineNumber(), msg));
-        }
+        StackTraceElement element = Thread.currentThread().getStackTrace()[3];
+        Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),
+                element.getMethodName(), element.getLineNumber(), msg));
     }
 }
