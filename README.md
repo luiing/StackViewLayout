@@ -4,10 +4,10 @@
 **层叠随手势滑动，带轮播自定义ViewGroup**
 
 ### Captures
-![效果图](/pic/002.png)
-![效果图](/pic/pic001.jpeg)
 
+![效果图](/pic/pic001.jpeg)
 ![效果图](/pic/demo20.gif)
+
 ![尺寸说明](/pic/biaozhu.png)
 
 <li>注释：此图解释参数意义，展示效果不太精确，图片真实宽度为**上层橙色**
