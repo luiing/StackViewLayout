@@ -6,14 +6,14 @@
 ### Captures
 ![效果图](/pic/002.png)
 ![效果图](/pic/pic001.jpeg)
-![效果图](/pic/demo20.gif)
 
+![效果图](/pic/demo20.gif)
 ![尺寸说明](/pic/biaozhu.png)
 
 <li>注释：此图解释参数意义，展示效果不太精确，图片真实宽度为**上层橙色**
 
 ### Use
-    implementation 'com.uis:stacklayout:0.2.1'
+    implementation 'com.uis:stacklayout:0.3.1'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -27,7 +27,7 @@ stackLooper|自动轮播|false/true
 stackSize|层叠数量|3
 stackEdgeModel|层叠位置|left/right
    
-```Xml
+```
     <?xml version="1.0" encoding="utf-8"?>
     <com.uis.stackview.StackLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:stack="http://schemas.android.com/apk/res-auto"
@@ -44,7 +44,7 @@ stackEdgeModel|层叠位置|left/right
     </com.uis.stackview.StackLayout>
 ```
 
-```Java
+```
         stackViewLayout.setStackLooper(true);
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
@@ -93,10 +93,9 @@ stackEdgeModel|层叠位置|left/right
 0.1.2|增加动画、轮播时间设置，获取当前选中位置|新增方法
 0.2.0|只有一个元素，不支持轮播和滑动|新增功能
 0.2.1|减少child层级,见child.measure()|新增功能
+0.3.0|增加联动效果（缩放+平移）|新增功能
+0.3.1|联动动画平滑过度|fixed
 
-### Thanks
-
-[AndroidPileLayout](https://github.com/xmuSistone/AndroidPileLayout)
 ### License
 
     Copyright 2018, uis

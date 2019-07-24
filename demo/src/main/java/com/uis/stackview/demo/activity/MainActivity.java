@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StackAdapter());
         //stackViewLayout.setStackLooper(true);
-        stackViewLayout.setPosition(10);
+        //stackViewLayout.setPosition(10);
         stackViewLayout.setAdapter(new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {
@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public int getItemCount() {
-                return dataList.size();
+                return 5;//dataList.size();
             }
 
             @Override
@@ -114,8 +114,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onItemClicked(int position) {
                 Log.e("xx","clicked = " + position);
-                stackViewLayout.setStackLooper(false);
-                stackViewLayout.setPosition(position+3);
+                //stackViewLayout.setStackLooper(false);
+                //stackViewLayout.setPosition(position+3);
             }
         });
     }
