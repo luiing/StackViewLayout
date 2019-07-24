@@ -127,14 +127,13 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                     }
                     view.setPivotX(pivot);
                     view.setPivotY(everyHeight/2f);
-                    if(mAnimator.isRunning() && i > 0){
-
-                    }else{
-                        view.layout(left, top, right, bottom);
-                        view.setScaleY((float) Math.pow(layout.stackZoomY,stackSize-1-i));
+                    if(!mAnimator.isRunning() ||  0 == i){
+                        float scale = (float) Math.pow(layout.stackZoomY,stackSize-1-i);
+                        view.setScaleY(scale);
                         view.setTranslationX(0);
+                        view.layout(left, top, right, bottom);
                     }
-                }else if(!isTopRemove){//顶层加入
+                }else if(!isTopRemove && !mAnimator.isRunning()){//顶层加入
                     if (layout.stackEdgeModel == MODEL_LEFT) {
                         left = layout.getWidth() - layout.stackEdge;
                         right = everyWidth + left;
@@ -191,6 +190,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             item = weakViews.removeLast();
             view = item.get();
             if(view != null){
+                view.setTranslationX(0);
+                view.setScaleY(1f);
                 break;
             }
         }
@@ -205,8 +206,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     private void removeStackView(View view){
         if(view != null && layout != null) {
             layout.removeView(view);
-            view.setTranslationX(0);
-            view.setScaleY(1f);
             weakViews.add(new WeakReference<>(view));
         }
     }
@@ -227,7 +226,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                 // 垂直滑动
             }
         }
-        return enableScroll;
+        return enableScroll && !mAnimator.isRunning();
     }
 
     void fingerTouchDown(){
@@ -261,19 +260,23 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     }
 
     void scaleTransChild(int dx){
-        int first = layout.getChildCount()>layout.stackSize ? 1 : 0;
-        int size = layout.getChildCount()-1;
+        int cnt = layout.getChildCount();
         int stackSize = layout.stackSize;
-        for(int i = first; i<size; i++){
+        int size = Math.min(cnt,stackSize)-(cnt==stackSize ? 1:0);
+        int first = cnt > stackSize ? 1 : 0;
+        int index = 0;
+        for (int i = first; i < size; i++) {
             View v = layout.getChildAt(i);
             int sign = MODEL_LEFT == layout.stackEdgeModel ? 1 : -1;
-            float rate = 1f*dx/layout.getWidth();
-            int tx = originX.get(i-first+1)-originX.get(i-first);
-            v.setTranslationX(v.getTranslationX() + rate*tx);
-
-            double scaley = Math.pow(layout.stackZoomY,stackSize-2-i);
-            double scale = Math.pow(layout.stackZoomY,stackSize-1-i);
-            v.setScaleY(v.getScaleY()+(float)(sign*rate*(scaley-scale)));
+            float rate = 1f * dx / layout.getWidth();
+            int indexX = index;
+            int tx =  originX.get( indexX+1) - originX.get(indexX);
+            v.setTranslationX(v.getTranslationX() + rate * tx);
+            int indexY = size - index;
+            double scaley = Math.pow(layout.stackZoomY, indexY - 1);
+            double scale = Math.pow(layout.stackZoomY, indexY);
+            v.setScaleY(v.getScaleY() + (float) (sign * rate * (scaley - scale)));
+            index++;
         }
     }
 
@@ -340,8 +343,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         int index = (stackSize - 1 + displayPosition) % cnt;
         View view = getStackView();
         layout.getAdapter().onBindView(view, index);
-        needRelayout = true;
         layout.addView(view, 0);
+        needRelayout = true;
         layout.getAdapter().onItemDisplay(displayPosition);
     }
 
@@ -354,8 +357,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         }
         View view = getStackView();
         layout.getAdapter().onBindView(view, position);
-        needRelayout = true;
         layout.addView(view);
+        needRelayout = true;
         return view;
     }
 
@@ -366,7 +369,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         if(displayPosition < 0){
             displayPosition += cnt;
         }
-        //needRelayout = true;
         View view = layout.getChildAt(0);
         removeStackView(view);
         layout.getAdapter().onItemDisplay(displayPosition);
@@ -381,9 +383,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         scaleTransChild((int)(mAnimator.getTranslationX()-lastValue));
         if (fraction >= 1.0f) {
             mAnimator.endAnimator(this);
-            needRelayout = true;
             layout.requestLayout();
-
+            needRelayout = true;
         } else if(fraction > 0.2 && mAnimator.needAddBottomView()){
             addBottomView();
         }
@@ -437,13 +438,15 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         }
 
         void startAnimator(boolean needRemoveTop,boolean needAddBottom,float transX, ValueAnimator.AnimatorUpdateListener listener){
-            int mills = needAddBottom ? duration : (int)(1.2*duration*Math.abs(transX)/mWidth);
-            needAddBottomView = needAddBottom;
-            needRemoveTopView = needRemoveTop;
-            animator = ValueAnimator.ofFloat(0f, transX).setDuration(mills);
-            animator.setInterpolator(needAddBottom ? interpolatorAuto : interpolator);
-            animator.addUpdateListener(listener);
-            animator.start();
+            if(animator == null) {
+                int mills = needAddBottom ? duration : (int) (1.2 * duration * Math.abs(transX) / mWidth);
+                needAddBottomView = needAddBottom;
+                needRemoveTopView = needRemoveTop;
+                animator = ValueAnimator.ofFloat(0f, transX).setDuration(mills);
+                animator.setInterpolator(needAddBottom ? interpolatorAuto : interpolator);
+                animator.addUpdateListener(listener);
+                animator.start();
+            }
         }
 
         void cancelAnimator(){
