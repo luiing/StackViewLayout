@@ -261,7 +261,7 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     void scaleTransChild(int dx){
         int cnt = layout.getChildCount();
-        int stackSize = layout.stackSize;
+        int stackSize = layout.getRealStackSize();
         int size = Math.min(cnt,stackSize)-(cnt==stackSize ? 1:0);
         int first = cnt > stackSize ? 1 : 0;
         int index = 0;
