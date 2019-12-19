@@ -2,10 +2,6 @@ package com.uis.stackview.demo.entity;
 
 import org.json.JSONObject;
 
-/**
- * Created by xmuSistone on 2017/5/12.
- */
-
 public class ItemEntity {
 
     private String country;
