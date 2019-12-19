@@ -156,7 +156,7 @@ public class StackLayout extends ViewGroup{
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        //stackHelper.log("act="+event.getActionMasked());
+//        stackHelper.log("act="+event.getActionMasked());
         int action = event.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -175,7 +175,7 @@ public class StackLayout extends ViewGroup{
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        //stackHelper.log("act="+event.getActionMasked());
+//        stackHelper.log("act="+event.getActionMasked());
         if(adapter == null || adapter.getItemCount() == 0){
             return false;
         }

@@ -108,7 +108,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             needRelayout = false;
             int childSize = layout.getChildCount();
             int stackSize = layout.getRealStackSize();
-
             for (int i = 0; i < childSize; i++) {
                 int top, bottom, left, right, pivot;
                 View view = layout.getChildAt(i);
@@ -254,8 +253,9 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             }else{
                 view = mAnimator.mAnimatorView;
             }
-            view.setTranslationX(view.getTranslationX() + 1.0f*everyWidth/layout.getWidth() * dx);
-            scaleTransChild(dx);
+            int tx = (int)(1.0f*everyWidth/layout.getWidth() * dx);
+            view.setTranslationX(view.getTranslationX() + tx);
+            scaleTransChild(tx);
         }
     }
 
@@ -269,13 +269,13 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             View v = layout.getChildAt(i);
             int sign = MODEL_LEFT == layout.stackEdgeModel ? 1 : -1;
             float rate = 1f * dx / layout.getWidth();
-            int indexX = index;
+            int indexX =  index;
             int tx =  originX.get( indexX+1) - originX.get(indexX);
             v.setTranslationX(v.getTranslationX() + rate * tx);
             int indexY = size - index;
-            double scaley = Math.pow(layout.stackZoomY, indexY - 1);
-            double scale = Math.pow(layout.stackZoomY, indexY);
-            v.setScaleY(v.getScaleY() + (float) (sign * rate * (scaley - scale)));
+            double scaley = Math.pow(layout.stackZoomY, indexY - 1 -first);
+            double scale = Math.pow(layout.stackZoomY, indexY-first);
+            v.setScaleY(Math.min(v.getScaleY() + (float) (sign * rate * (scaley - scale)),(float) scaley));
             index++;
         }
     }
@@ -338,14 +338,16 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     private void addBottomView(){
         int cnt = getItemCount();
         int stackSize = layout.getRealStackSize();
-        displayPosition += 1;
-        displayPosition %= cnt;
-        int index = (stackSize - 1 + displayPosition) % cnt;
-        View view = getStackView();
-        layout.getAdapter().onBindView(view, index);
-        layout.addView(view, 0);
-        needRelayout = true;
-        layout.getAdapter().onItemDisplay(displayPosition);
+        if(layout.getChildCount() < stackSize+1) {
+            displayPosition += 1;
+            displayPosition %= cnt;
+            int index = (stackSize - 1 + displayPosition) % cnt;
+            View view = getStackView();
+            layout.getAdapter().onBindView(view, index);
+            layout.addView(view, 0);
+            needRelayout = true;
+            layout.getAdapter().onItemDisplay(displayPosition);
+        }
     }
 
     /** 加入顶层 */
@@ -519,9 +521,10 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         return false;
     }
 
-    void log(String msg){
+    static void log(String msg){
         StackTraceElement element = Thread.currentThread().getStackTrace()[3];
         Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),
                 element.getMethodName(), element.getLineNumber(), msg));
+
     }
 }
