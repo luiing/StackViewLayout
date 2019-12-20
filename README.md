@@ -3,6 +3,14 @@
 
 **层叠随手势滑动，带轮播自定义ViewGroup**
 
+1.onMeasure通过StackAdapter适配器取到itemView加入到StackLayaout容器
+
+2.onLayout取到childView按照层叠布局
+
+3.onInterceptTouchEvent处理手势支持子View及Velocity
+
+4.onTouchEvent处理手势，释放后播放动画平滑过渡
+
 ### Captures
 
 ![效果图](/pic/pic001.jpeg)
