@@ -13,7 +13,7 @@
 <li>注释：此图解释参数意义，展示效果不太精确，图片真实宽度为**上层橙色**
 
 ### Use
-    implementation 'com.uis:stacklayout:0.3.2'
+    implementation 'com.uis:stacklayout:0.3.3'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -96,6 +96,7 @@ stackEdgeModel|层叠位置|left/right
 0.3.0|增加联动效果（缩放+平移）|新增功能
 0.3.1|联动动画平滑过度|fixed
 0.3.2|联动动画去抖动及adapter数据更新会多出层|优化
+0.3.3|adapter数据更新ui展示错误|fixed
 
 ### License
 
