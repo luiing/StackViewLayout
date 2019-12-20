@@ -122,7 +122,6 @@ public class StackLayout extends ViewGroup{
 
     public void setAdapter(StackAdapter adapter) {
         this.adapter = adapter;
-        removeAllViewsInLayout();
         notifyDataChanged();
     }
 
@@ -131,6 +130,7 @@ public class StackLayout extends ViewGroup{
     }
 
     public void notifyDataChanged(){
+        removeAllViewsInLayout();
         stackHelper.notifyDataChanged();
     }
 
