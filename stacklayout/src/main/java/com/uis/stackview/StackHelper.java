@@ -297,6 +297,9 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                 }else{
                     removeBottomView();
                     transX = everyWidth*sign - transX;
+                    //addTop宽度补偿达到平滑过度
+                    int offset   = (layout.getWidth()+layout.stackEdge-everyWidth)*sign;
+                    scaleTransChild(offset);
                     mAnimator.startAnimator(false,false,transX,this);
                 }
             }else {
