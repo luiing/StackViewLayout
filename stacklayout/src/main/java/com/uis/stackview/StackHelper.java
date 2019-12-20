@@ -73,22 +73,20 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     void measureChild(int width,int height){
         if(getItemCount() > 0 ){
             int size = layout.getRealStackSize();
-            if(originX.isEmpty()) {
-                float stackSpaces = 0;
-                everyHeight = height - layout.getPaddingTop() - layout.getPaddingBottom();
-                originX.add(layout.stackEdge);
-                int padX = layout.stackPadX;
-                if(padX*(size-1) > layout.stackSpace){
-                    padX = 0;
-                }
-                for (int i = 1; i < size; i++) {
-                    int stackSpace = (int)((layout.stackSpace-padX*(size-1-i))*Math.pow(layout.stackZoomX,(size-1-i)));
-                    stackSpaces += stackSpace;
-                    originX.add(originX.get(i - 1) + stackSpace);
-                }
-                everyWidth = width - layout.getPaddingLeft() - layout.getPaddingRight() - (int)stackSpaces - 2 * layout.stackEdge;
-                mMaxDistance = everyWidth / 3;
+            float stackSpaces = 0;
+            everyHeight = height - layout.getPaddingTop() - layout.getPaddingBottom();
+            originX.add(layout.stackEdge);
+            int padX = layout.stackPadX;
+            if(padX*(size-1) > layout.stackSpace){
+                padX = 0;
             }
+            for (int i = 1; i < size; i++) {
+                int stackSpace = (int)((layout.stackSpace-padX*(size-1-i))*Math.pow(layout.stackZoomX,(size-1-i)));
+                stackSpaces += stackSpace;
+                originX.add(originX.get(i - 1) + stackSpace);
+            }
+            everyWidth = width - layout.getPaddingLeft() - layout.getPaddingRight() - (int)stackSpaces - 2 * layout.stackEdge;
+            mMaxDistance = everyWidth / 3;
             int childSize = layout.getChildCount();
             if(childSize <= 0) {
                 needRelayout = true;
@@ -154,7 +152,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     void notifyDataChanged(){
         if(layout != null){
-            layout.requestLayout();
+            layout.removeAllViews();
+            weakViews.clear();
         }
     }
 
@@ -523,8 +522,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     static void log(String msg){
         StackTraceElement element = Thread.currentThread().getStackTrace()[3];
-        Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),
-                element.getMethodName(), element.getLineNumber(), msg));
-
+        Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),element.getMethodName(), element.getLineNumber(), msg));
     }
 }
