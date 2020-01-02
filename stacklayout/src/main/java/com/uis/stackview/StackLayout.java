@@ -179,6 +179,7 @@ public class StackLayout extends ViewGroup{
         if (event.getAction() == MotionEvent.ACTION_DOWN && event.getEdgeFlags() != 0) {
             return false;
         }
+        StackHelper.log("action:"+event.getAction()+",downX="+downX+",lastX="+event.getX()+",downY="+downY+",lastY="+event.getY());
         mVelocity.addMovement(event);
         int action = event.getActionMasked();
         switch (action) {
@@ -187,12 +188,12 @@ public class StackLayout extends ViewGroup{
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(adapter != null && adapter.getItemCount() > 1) {
+                    int currentX = (int) event.getX();
                     if (stackHelper.canScroll(downX, downY, event.getX(), event.getY())) {
-                        int currentX = (int) event.getX();
                         int dx = (int) (currentX - lastX);
                         stackHelper.executeScroll(dx);
-                        lastX = currentX;
                     }
+                    lastX = currentX;
                 }
                 break;
             case MotionEvent.ACTION_UP:
