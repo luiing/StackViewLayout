@@ -1,7 +1,7 @@
 # StackViewLayout
-**An swip StackViewLayout,support left and right.**
+**A swipe ViewGroup that supports left and right slide.**
 
-**层叠随手势滑动，带轮播自定义ViewGroup**
+**层叠View支持手势左右滑动，自动轮播，过渡动画**
 
 1.onMeasure通过StackAdapter适配器取到itemView加入到StackLayaout容器
 
