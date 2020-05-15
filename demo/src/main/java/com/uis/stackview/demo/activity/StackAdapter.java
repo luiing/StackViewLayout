@@ -83,7 +83,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
         StackLayout.StackAdapter adapter = new StackLayout.StackAdapter() {
 
             @Override
-            public View onCreateView(ViewGroup parent) {
+            public View onCreateView(ViewGroup parent,int viewType) {
                 return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
             }
 

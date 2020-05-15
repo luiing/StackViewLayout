@@ -6,10 +6,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-
-import com.andview.refreshview.XRefreshView;
-import com.andview.refreshview.utils.LogUtils;
-import com.facebook.common.logging.FLog;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.uis.stackview.demo.R;
@@ -42,8 +38,6 @@ public class MainActivity extends AppCompatActivity{
             ViewGroup.LayoutParams params = findViewById(R.id.view).getLayoutParams();
             params.height = getResources().getDimensionPixelSize(R.dimen.status_height);
         }
-        FLog.setMinimumLoggingLevel(FLog.VERBOSE);
-        LogUtils.enableLog(false);
         if(!Fresco.hasBeenInitialized()) {
             ImagePipelineConfig config = ImagePipelineConfig.newBuilder(getApplicationContext())
                     .setDiskCacheEnabled(true)
@@ -55,19 +49,6 @@ public class MainActivity extends AppCompatActivity{
         final List<ItemEntity> dataList = StackAdapter.initDataList(this);
         final StackAdapter stackAdapter = new StackAdapter();
         final RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        final XRefreshView freshView = findViewById(R.id.refreshView);
-
-        freshView.setAutoLoadMore(false);
-        freshView.setSilenceLoadMore(false);
-        freshView.setXRefreshViewListener(new XRefreshView.SimpleXRefreshListener(){
-            @Override
-            public void onRefresh(boolean isPullDown) {
-                freshView.stopRefresh();
-                stackAdapter.dataList = dataList.subList(0,6);
-                stackAdapter.notifyDataSetChanged();
-            }
-        });
-
 
         ViewPager viewPager = findViewById(R.id.viewPager);
         ViewPagerAdapter adapter = new ViewPagerAdapter(dataList);
