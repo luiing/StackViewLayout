@@ -73,22 +73,20 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     void measureChild(int width,int height){
         if(getItemCount() > 0 ){
             int size = layout.getRealStackSize();
-            if(originX.isEmpty()) {
-                float stackSpaces = 0;
-                everyHeight = height - layout.getPaddingTop() - layout.getPaddingBottom();
-                originX.add(layout.stackEdge);
-                int padX = layout.stackPadX;
-                if(padX*(size-1) > layout.stackSpace){
-                    padX = 0;
-                }
-                for (int i = 1; i < size; i++) {
-                    int stackSpace = (int)((layout.stackSpace-padX*(size-1-i))*Math.pow(layout.stackZoomX,(size-1-i)));
-                    stackSpaces += stackSpace;
-                    originX.add(originX.get(i - 1) + stackSpace);
-                }
-                everyWidth = width - layout.getPaddingLeft() - layout.getPaddingRight() - (int)stackSpaces - 2 * layout.stackEdge;
-                mMaxDistance = everyWidth / 3;
+            float stackSpaces = 0;
+            everyHeight = height - layout.getPaddingTop() - layout.getPaddingBottom();
+            originX.add(layout.stackEdge);
+            int padX = layout.stackPadX;
+            if(padX*(size-1) > layout.stackSpace){
+                padX = 0;
             }
+            for (int i = 1; i < size; i++) {
+                int stackSpace = (int)((layout.stackSpace-padX*(size-1-i))*Math.pow(layout.stackZoomX,(size-1-i)));
+                stackSpaces += stackSpace;
+                originX.add(originX.get(i - 1) + stackSpace);
+            }
+            everyWidth = width - layout.getPaddingLeft() - layout.getPaddingRight() - (int)stackSpaces - 2 * layout.stackEdge;
+            mMaxDistance = everyWidth / 3;
             int childSize = layout.getChildCount();
             if(childSize <= 0) {
                 needRelayout = true;
@@ -108,7 +106,6 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             needRelayout = false;
             int childSize = layout.getChildCount();
             int stackSize = layout.getRealStackSize();
-
             for (int i = 0; i < childSize; i++) {
                 int top, bottom, left, right, pivot;
                 View view = layout.getChildAt(i);
@@ -155,7 +152,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
 
     void notifyDataChanged(){
         if(layout != null){
-            layout.requestLayout();
+            layout.removeAllViews();
+            weakViews.clear();
         }
     }
 
@@ -254,8 +252,9 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             }else{
                 view = mAnimator.mAnimatorView;
             }
-            view.setTranslationX(view.getTranslationX() + 1.0f*everyWidth/layout.getWidth() * dx);
-            scaleTransChild(dx);
+            int tx = (int)(1.0f*everyWidth/layout.getWidth() * dx);
+            view.setTranslationX(view.getTranslationX() + tx);
+            scaleTransChild(tx);
         }
     }
 
@@ -269,13 +268,13 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
             View v = layout.getChildAt(i);
             int sign = MODEL_LEFT == layout.stackEdgeModel ? 1 : -1;
             float rate = 1f * dx / layout.getWidth();
-            int indexX = index;
+            int indexX =  index;
             int tx =  originX.get( indexX+1) - originX.get(indexX);
             v.setTranslationX(v.getTranslationX() + rate * tx);
             int indexY = size - index;
-            double scaley = Math.pow(layout.stackZoomY, indexY - 1);
-            double scale = Math.pow(layout.stackZoomY, indexY);
-            v.setScaleY(v.getScaleY() + (float) (sign * rate * (scaley - scale)));
+            double scaley = Math.pow(layout.stackZoomY, indexY - 1 -first);
+            double scale = Math.pow(layout.stackZoomY, indexY-first);
+            v.setScaleY(Math.min(v.getScaleY() + (float) (sign * rate * (scaley - scale)),(float) scaley));
             index++;
         }
     }
@@ -298,6 +297,9 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
                 }else{
                     removeBottomView();
                     transX = everyWidth*sign - transX;
+                    //addTop宽度补偿达到平滑过度
+                    int offset   = (layout.getWidth()+layout.stackEdge-everyWidth)*sign;
+                    scaleTransChild(offset);
                     mAnimator.startAnimator(false,false,transX,this);
                 }
             }else {
@@ -338,14 +340,16 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
     private void addBottomView(){
         int cnt = getItemCount();
         int stackSize = layout.getRealStackSize();
-        displayPosition += 1;
-        displayPosition %= cnt;
-        int index = (stackSize - 1 + displayPosition) % cnt;
-        View view = getStackView();
-        layout.getAdapter().onBindView(view, index);
-        layout.addView(view, 0);
-        needRelayout = true;
-        layout.getAdapter().onItemDisplay(displayPosition);
+        if(layout.getChildCount() < stackSize+1) {
+            displayPosition += 1;
+            displayPosition %= cnt;
+            int index = (stackSize - 1 + displayPosition) % cnt;
+            View view = getStackView();
+            layout.getAdapter().onBindView(view, index);
+            layout.addView(view, 0);
+            needRelayout = true;
+            layout.getAdapter().onItemDisplay(displayPosition);
+        }
     }
 
     /** 加入顶层 */
@@ -519,9 +523,8 @@ final class StackHelper implements ValueAnimator.AnimatorUpdateListener{
         return false;
     }
 
-    void log(String msg){
+    static void log(String msg){
         StackTraceElement element = Thread.currentThread().getStackTrace()[3];
-        Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),
-                element.getMethodName(), element.getLineNumber(), msg));
+        Log.e("StackLayout", String.format("%1$s:%2$s(%3$s):%4$s", element.getClassName(),element.getMethodName(), element.getLineNumber(), msg));
     }
 }

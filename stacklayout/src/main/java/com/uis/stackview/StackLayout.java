@@ -122,7 +122,6 @@ public class StackLayout extends ViewGroup{
 
     public void setAdapter(StackAdapter adapter) {
         this.adapter = adapter;
-        removeAllViewsInLayout();
         notifyDataChanged();
     }
 
@@ -156,7 +155,6 @@ public class StackLayout extends ViewGroup{
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        //stackHelper.log("act="+event.getActionMasked());
         int action = event.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -175,13 +173,13 @@ public class StackLayout extends ViewGroup{
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        //stackHelper.log("act="+event.getActionMasked());
         if(adapter == null || adapter.getItemCount() == 0){
             return false;
         }
         if (event.getAction() == MotionEvent.ACTION_DOWN && event.getEdgeFlags() != 0) {
             return false;
         }
+        StackHelper.log("action:"+event.getAction()+",downX="+downX+",lastX="+event.getX()+",downY="+downY+",lastY="+event.getY());
         mVelocity.addMovement(event);
         int action = event.getActionMasked();
         switch (action) {
@@ -190,12 +188,12 @@ public class StackLayout extends ViewGroup{
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(adapter != null && adapter.getItemCount() > 1) {
+                    int currentX = (int) event.getX();
                     if (stackHelper.canScroll(downX, downY, event.getX(), event.getY())) {
-                        int currentX = (int) event.getX();
                         int dx = (int) (currentX - lastX);
                         stackHelper.executeScroll(dx);
-                        lastX = currentX;
                     }
+                    lastX = currentX;
                 }
                 break;
             case MotionEvent.ACTION_UP:
