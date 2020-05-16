@@ -11,6 +11,8 @@
         <attr name="stackEdgeModel">
             <flag name="left" value="1"/>
             <flag name="right" value="2"/>
+            <flag name="top" value="3"/>
+            <flag name="bottom" value="4"/>
             <flag name="none" value="2"/>
         </attr>
     </declare-styleable>

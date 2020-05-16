@@ -5,26 +5,22 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
-
 import com.bumptech.glide.Glide;
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
 import com.uis.stackview.StackLayout;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.util.ArrayList;
-
+import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
-    ArrayList<ItemEntity> dataList;
+    List<ItemEntity> dataList;
 
     @NonNull
     @Override
@@ -47,7 +43,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 100;
+        return 10;
     }
 
     public static ArrayList<ItemEntity> initDataList(Context context) {
@@ -83,40 +79,48 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     static class StackVH extends RecyclerView.ViewHolder{
         StackLayout stackLayout;
+        List<ItemEntity> stackData = new ArrayList<>();
+        StackLayout.StackAdapter adapter = new StackLayout.StackAdapter() {
+
+            @Override
+            public View onCreateView(ViewGroup parent,int viewType) {
+                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
+            }
+
+            @Override
+            public void onBindView(View view, int position) {
+                ImageView imageView = view.findViewById(R.id.imageView);
+                try{
+                    Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public int getItemCount() {
+                return stackData.size();
+            }
+
+            @Override
+            public void onItemDisplay(int position) {
+
+            }
+        };
+
         public StackVH(boolean left,ViewGroup parent) {
             super(LayoutInflater.from(parent.getContext()).inflate(
                     left ? R.layout.stack_left : R.layout.stack_right,parent,false));
             stackLayout = itemView.findViewById(R.id.stacklayout);
         }
 
-        public void binderVH(final ArrayList<ItemEntity> dataList){
-            stackLayout.setAdapter(new StackLayout.StackAdapter() {
-
-                @Override
-                public View onCreateView(ViewGroup parent) {
-                    return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
-                }
-
-                @Override
-                public void onBindView(View view, int position) {
-                    ImageView imageView = view.findViewById(R.id.imageView);
-                    try{
-                        Glide.with(view.getContext()).load(dataList.get(position).getMapImageUrl()).into(imageView);
-                    }catch (Exception ex){
-                        ex.printStackTrace();
-                    }
-                }
-
-                @Override
-                public int getItemCount() {
-                    return dataList.size();
-                }
-
-                @Override
-                public void onItemDisplay(int position) {
-
-                }
-            });
+        public void binderVH(final List<ItemEntity> dataList){
+            stackData = dataList;
+            if(stackLayout.getAdapter() == null) {
+                stackLayout.setAdapter(adapter);
+            }else{
+                stackLayout.notifyDataChanged();
+            }
         }
     }
 }

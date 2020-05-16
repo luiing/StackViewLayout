@@ -11,32 +11,15 @@
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="100dp"
         android:clipChildren="true"
         android:clipToPadding="false"
         android:paddingRight="80dp"
         >
     </androidx.viewpager.widget.ViewPager>
-    <include layout="@layout/stack_right"/>
-    <Button android:id="@+id/bt_web"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="web"
-        android:visibility="gone"
-        />
-    <Button android:id="@+id/bt_app"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="app"
-        android:visibility="gone"
-        />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
     </androidx.recyclerview.widget.RecyclerView>
-
-
-
 </LinearLayout>

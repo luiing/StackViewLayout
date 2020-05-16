@@ -1,31 +1,47 @@
 # StackViewLayout
-**An swip StackViewLayout,support left and right.**
+**A swipe ViewGroup that supports left and right slide.**
 
-**层叠随手势滑动，带轮播自定义ViewGroup**
+**层叠View支持手势左右滑动，自动轮播，过渡动画**
+
+1.onMeasure通过StackAdapter适配器取到itemView加入到StackLayaout容器
+  
+  onMeasure() through stackAdapter add view to StackLayout
+
+2.onLayout取到childView按照层叠布局
+
+  onLayout() get child view layout stack ui
+
+3.onInterceptTouchEvent处理手势支持子View及Velocity
+
+  onInterceptTouchEvent() support child view gesture
+
+4.onTouchEvent处理手势，释放后播放动画平滑过渡
+
+  onTouchEvent() swipe animation,when release recover animation
 
 ### Captures
-![效果图](/pic/002.png)
-![效果图](/pic/pic001.jpeg)
 
+![效果图](/pic/pic001.jpeg)
 ![效果图](/pic/demo20.gif)
+
 ![尺寸说明](/pic/biaozhu.png)
 
 <li>注释：此图解释参数意义，展示效果不太精确，图片真实宽度为**上层橙色**
 
 ### Use
-    implementation 'com.uis:stacklayout:0.3.0'
+    implementation 'com.uis:stacklayout:0.3.4'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
-stackSpace|间距|默认值：10dp
-stackEdge|边界距离|默认值：10dp
-stackZoomX|x方向缩放| 0<x<=1,1表示等间距，默认值：1
-stackPadX|x方向偏移|表示偏移间距,默认值：0
+stackSpace|间距(space)|默认值(default)：10dp
+stackEdge|边界距离(edge)|默认值(default)：10dp
+stackZoomX|x方向缩放(x zoom)| 0<x<=1,1表示等间距，默认值(default)：1
+stackPadX|x方向偏移(x padding)|表示偏移间距,默认值：0
 stackPadX|PadX*(Size-1) < Space|PadX优先级高于ZoomX
-stackZoomY|y方向缩放| 0<y<=1,1表示和顶层等高度，默认值：0.9
-stackLooper|自动轮播|false/true
-stackSize|层叠数量|3
-stackEdgeModel|层叠位置|left/right
+stackZoomY|y方向缩放(y zoom)| 0<y<=1,1表示和顶层等高度，默认值：0.9
+stackLooper|自动轮播(looper)|false/true
+stackSize|层叠数量(stack size)|3
+stackEdgeModel|层叠位置(stack model)|left/right
    
 ```
     <?xml version="1.0" encoding="utf-8"?>
@@ -86,14 +102,18 @@ stackEdgeModel|层叠位置|left/right
 ### Version
 *Version*| *Descript*|*Fixed*
 ----|----|----
-0.0.1|自动轮播，滑动从顶部移除，整体上浮|初始版本
-0.0.2|滑动从顶层加入，整体下沉|fixed 内部view点击事件
-0.1.0|zoomX,zoomY呈等比数列|更改属性
-0.1.1|只有一条数据时|fixed
-0.1.2|增加动画、轮播时间设置，获取当前选中位置|新增方法
-0.2.0|只有一个元素，不支持轮播和滑动|新增功能
-0.2.1|减少child层级,见child.measure()|新增功能
-0.3.0|增加联动效果（缩放+平移）|新增功能
+0.0.1|自动轮播，滑动从顶部移除，整体上浮|support auto looper and animation
+0.0.2|滑动从顶层加入，整体下沉|fixed child view clicked event
+0.1.0|zoomX,zoomY呈等比数列|modify attribute
+0.1.1|只有一条数据时|fixed adapter itemSize=1
+0.1.2|增加动画、轮播时间设置，获取当前选中位置|add animation,looper time
+0.2.0|只有一个元素，不支持轮播和滑动|only one child,can't swipe
+0.2.1|减少child层级,见child.measure()|child.measure() opt
+0.3.0|增加联动效果（缩放+平移）|support whole animation
+0.3.1|联动动画平滑过度|fixed animation smooth
+0.3.2|联动动画去抖动及adapter数据更新会多出层|opt animation shake
+0.3.3|adapter数据更新ui展示错误|opt adapter changed display
+0.3.4|滑动促发item点击事件|fixed item clicked event
 
 ### License
 
