@@ -4,11 +4,11 @@
     android:id="@+id/stacklayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    stack:stackSpace="10dp"
-    stack:stackEdge="10dp"
-    stack:stackZoomX="1"
-    stack:stackZoomY="0.9"
-    stack:stackLooper = "true"
+    stack:stackAspectRatio="3"
+    stack:stackPaddingX="10dp"
+    stack:stackOffsetX="1dp"
+    stack:stackOffsetY="5dp"
+    stack:stackPaddingY="20dp"
     stack:stackSize = "5"
-    stack:stackEdgeModel = "left">
+    stack:stackModel="left">
 </com.uis.stackview.StackLayout>
