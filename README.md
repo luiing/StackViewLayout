@@ -19,17 +19,12 @@
 
   onTouchEvent() swipe animation,when release recover animation
 
-### Captures
+ #### Captures
 
 ![效果图](/pic/pic001.jpeg)
-![效果图](/pic/demo20.gif)
-
-![尺寸说明](/pic/biaozhu.png)
-
-<li>注释：此图解释参数意义，展示效果不太精确，图片真实宽度为**上层橙色**
 
 ### Use
-    implementation 'com.uis:stacklayout:0.3.4'
+    implementation 'com.uis:stacklayout:0.5.0'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -98,22 +93,6 @@ stackEdgeModel|层叠位置(stack model)|left/right
         });
         stackViewLayout.setPosition(10);//指定位置
 ```
-
-### Version
-*Version*| *Descript*|*Fixed*
-----|----|----
-0.0.1|自动轮播，滑动从顶部移除，整体上浮|support auto looper and animation
-0.0.2|滑动从顶层加入，整体下沉|fixed child view clicked event
-0.1.0|zoomX,zoomY呈等比数列|modify attribute
-0.1.1|只有一条数据时|fixed adapter itemSize=1
-0.1.2|增加动画、轮播时间设置，获取当前选中位置|add animation,looper time
-0.2.0|只有一个元素，不支持轮播和滑动|only one child,can't swipe
-0.2.1|减少child层级,见child.measure()|child.measure() opt
-0.3.0|增加联动效果（缩放+平移）|support whole animation
-0.3.1|联动动画平滑过度|fixed animation smooth
-0.3.2|联动动画去抖动及adapter数据更新会多出层|opt animation shake
-0.3.3|adapter数据更新ui展示错误|opt adapter changed display
-0.3.4|滑动促发item点击事件|fixed item clicked event
 
 ### License
 

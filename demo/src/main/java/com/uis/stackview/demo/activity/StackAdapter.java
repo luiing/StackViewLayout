@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import com.bumptech.glide.Glide;
-import com.facebook.drawee.view.SimpleDraweeView;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
 import com.uis.stackview.StackLayout;
@@ -70,11 +69,6 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
             e.printStackTrace();
         }
         return dataList;
-    }
-
-    public static class ViewHolder {
-        ImageView imageView;
-        SimpleDraweeView dv;
     }
 
     static class StackVH extends RecyclerView.ViewHolder{
