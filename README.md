@@ -21,7 +21,7 @@
 
  #### Captures
 
-![效果图](/pic/pic001.jpeg)
+![效果图]()
 
 ### Use
     implementation 'com.uis:stacklayout:0.5.0'

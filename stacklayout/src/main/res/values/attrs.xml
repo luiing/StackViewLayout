@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="StackLayout">
+    <declare-styleable name="StackViewLayout">
         <attr name="stackPaddingX" format="dimension|reference" />
         <attr name="stackOffsetX" format="dimension|reference" />
         <attr name="stackPaddingY" format="dimension|reference" />

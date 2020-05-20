@@ -8,7 +8,7 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.uis.stackview.demo.R;
 import com.uis.stackview.demo.entity.ItemEntity;
-import com.uis.stackview.StackLayout;
+import com.uis.stackview.StackViewLayout;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.InputStream;
@@ -72,9 +72,9 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
     }
 
     static class StackVH extends RecyclerView.ViewHolder{
-        StackLayout stackLayout;
+        StackViewLayout stackLayout;
         List<ItemEntity> stackData = new ArrayList<>();
-        StackLayout.StackAdapter adapter = new StackLayout.StackAdapter() {
+        StackViewLayout.StackViewAdapter adapter = new StackViewLayout.StackViewAdapter() {
 
             @Override
             public View onCreateView(ViewGroup parent,int viewType) {
@@ -113,7 +113,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
             if(stackLayout.getAdapter() == null) {
                 stackLayout.setAdapter(adapter);
             }else{
-                stackLayout.notifyDataChanged();
+                //stackLayout.notifyDataChanged();
             }
         }
     }

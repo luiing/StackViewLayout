@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.uis.stackview.StackLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.uis.stackview.StackViewLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:stack="http://schemas.android.com/apk/res-auto"
     android:id="@+id/stacklayout"
     android:layout_width="match_parent"
@@ -11,4 +11,4 @@
     stack:stackPaddingY="20dp"
     stack:stackSize = "5"
     stack:stackModel="left">
-</com.uis.stackview.StackLayout>
+</com.uis.stackview.StackViewLayout>
