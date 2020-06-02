@@ -1,4 +1,4 @@
-package com.uis.stackview.demo.activity;
+package com.uis.stackviewlayout.demo.activity;
 
 import android.graphics.Color;
 import android.os.Build;
@@ -9,7 +9,7 @@ import android.view.WindowManager;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.uis.stackview.demo.R;
-import com.uis.stackview.demo.entity.ItemEntity;
+import com.uis.stackviewlayout.demo.entity.ItemEntity;
 import java.util.List;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;

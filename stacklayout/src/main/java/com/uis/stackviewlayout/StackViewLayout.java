@@ -1,7 +1,8 @@
-package com.uis.stackview;
+package com.uis.stackviewlayout;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -10,14 +11,13 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Scroller;
-
 import androidx.core.view.ViewCompat;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/** 卡片层叠视图，支持随手势滑动动画，自动轮播动画
- * @author  uis 2020/5/16
+/** 卡片层叠视图，支持随手势滑动动画，自动轮播
+ * @author  uis 2020/6/1
  */
 
 public class StackViewLayout extends ViewGroup{
@@ -38,7 +38,7 @@ public class StackViewLayout extends ViewGroup{
     private int paddingY = 10;
     private int offsetY = 2;
 
-    private int startX, startY;
+    private int startX, startY,current;
     private VelocityTracker mVelocity;
     private int mMaximumVelocity;
     private int mTouchSlop;
@@ -47,6 +47,7 @@ public class StackViewLayout extends ViewGroup{
     private StackViewAdapter adapter;
     private int mDuration = 500;
     private int mDelay = 3000;
+    private int childWidthMeasure,childHeightMeasure;
 
     public StackViewLayout(Context context) {
         this(context, null);
@@ -70,34 +71,83 @@ public class StackViewLayout extends ViewGroup{
         paddingY = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingY,paddingY);
         offsetY = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetY,offsetY);
         type.recycle();
+
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
         mTouchSlop = configuration.getScaledTouchSlop();
         mScroller = new Scroller(context);
         if(isInEditMode()){
+            adapter = new StackViewAdapter() {
+                @Override
+                public View onCreateView(ViewGroup parent, int viewType) {
+                    return new View(parent.getContext());
+                }
 
+                @Override
+                public void onBindView(View view, int position) {
+                    view.setBackgroundColor(Color.GRAY);
+                }
+
+                @Override
+                public int getItemCount() {
+                    return 10;
+                }
+            };
         }
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int width = getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec);
-        int height = MeasureSpec.EXACTLY != MeasureSpec.getMode(heightMeasureSpec) ? width/2
-                : getDefaultSize(getSuggestedMinimumHeight(),heightMeasureSpec);
-        if(!isInEditMode() && (adapter == null || adapter.getItemCount() == 0)){
-            height = 0;
+        int width = getDefaultSize(0, widthMeasureSpec);
+        int height = getDefaultSize(0,heightMeasureSpec);
+        childWidthMeasure = width-2*edge-getSeriesSum(paddingX,offsetX,getOffsetXSize())-getPaddingLeft()-getPaddingRight();
+        if(aspectRatio > 0){
+            height = (int)(childWidthMeasure/aspectRatio)+getPaddingTop()+getPaddingBottom();
         }
+        childHeightMeasure = height;
         setMeasuredDimension(width,height);
     }
 
-
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-
+        createdChildView();
+        int count = getChildCount();
+        for(int i=0;i<count;i++){
+            View child = getChildAt(i);
+            int left = edge+getSeriesSum(paddingX,offsetX,i);
+            int right = left + childWidthMeasure;
+            int top = edge*i/5;
+            int bottom = childHeightMeasure-top;
+            child.layout(left,top,right,bottom);
+        }
     }
 
-    void layoutChildren(){
+    private void createdChildView(){
+        int size = getOffsetXSize();
+        for (int i = getChildCount(); i < 1+size && size > 0; i++) {
+            int position = (current+i)%adapter.getItemCount();
+            int viewType = adapter.getItemViewType(position);
+            View child = adapter.onCreateView(this, viewType);
+            child.measure(MeasureSpec.makeMeasureSpec(childWidthMeasure, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(childHeightMeasure, MeasureSpec.EXACTLY));
+            addView(child);
+            adapter.onBindView(child,position);
+        }
+    }
 
+    private int getOffsetXSize(){
+        return null==adapter ? 0 : Math.min(adapter.getItemCount(),stackSize);
+    }
+
+    /**
+     * 等差数列求和
+     * @param start 起始值
+     * @param ratio 公差
+     * @param size 数量
+     * @return
+     */
+    private int getSeriesSum(int start,int ratio,int size){
+        return size*(2*start-(size-1)*ratio)/2;
     }
 
     @Override
@@ -111,41 +161,37 @@ public class StackViewLayout extends ViewGroup{
         }
     }
 
-    void startScroll(){
+    private void startScroll(){
         mScroller.startScroll(getScrollX(),getScrollY(),0,0,mDuration);
         ViewCompat.postInvalidateOnAnimation(this);
     }
 
-    void endScroll(){
+    private void endScroll(){
 
     }
 
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        if(executor == null || executor.isShutdown()){
-            executor = new ScheduledThreadPoolExecutor(1);
+    private void handleAutoPlay(boolean play){
+        if(play) {
+            if(executor == null || executor.isShutdown()){
+                executor = new ScheduledThreadPoolExecutor(1);
+                executor.scheduleWithFixedDelay(new Runnable() {
+                    @Override
+                    public void run() {
+
+                    }
+                }, mDelay, mDelay, TimeUnit.MILLISECONDS);
+            }
+        }else{
+            if(executor != null && !executor.isShutdown()) {
+                executor.shutdownNow();
+                executor = null;
+            }
         }
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        if(executor != null && !executor.isShutdown()) {
-            executor.shutdownNow();
-            executor = null;
-        }
-    }
-
-    public void autoPay(){
-        if(autoPlay) {
-            executor.scheduleWithFixedDelay(new Runnable() {
-                @Override
-                public void run() {
-
-                }
-            }, mDelay, mDelay, TimeUnit.MILLISECONDS);
-        }
+    public void setAutoPlay(boolean autoPlay){
+        this.autoPlay = autoPlay;
+        handleAutoPlay(autoPlay);
     }
 
     public void setAdapter(StackViewAdapter adapter) {
@@ -155,6 +201,18 @@ public class StackViewLayout extends ViewGroup{
 
     public StackViewAdapter getAdapter(){
         return adapter;
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        handleAutoPlay(autoPlay);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        handleAutoPlay(false);
     }
 
     @Override
@@ -234,9 +292,7 @@ public class StackViewLayout extends ViewGroup{
 
         public abstract int getItemCount();
 
-        public int getItemViewType(int position){
-            return 0;
-        }
+        public int getItemViewType(int position){ return 0; }
 
         public void onItemDisplay(int position) { }
     }
