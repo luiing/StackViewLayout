@@ -1,4 +1,4 @@
-package com.uis.stackview.demo.activity;
+package com.uis.stackviewlayout.demo.activity;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -6,7 +6,7 @@ import android.view.ViewGroup;
 
 import com.facebook.drawee.view.SimpleDraweeView;
 import com.uis.stackview.demo.R;
-import com.uis.stackview.demo.entity.ItemEntity;
+import com.uis.stackviewlayout.demo.entity.ItemEntity;
 
 import java.util.LinkedList;
 import java.util.List;

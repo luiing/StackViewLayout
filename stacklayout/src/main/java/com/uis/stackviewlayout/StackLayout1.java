@@ -1,4 +1,4 @@
-package com.uis.stackview;
+package com.uis.stackviewlayout;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -15,6 +15,7 @@ import android.view.ViewParent;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
+
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
 
     public StackLayout1(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        TypedArray type = context.obtainStyledAttributes(attrs, R.styleable.StackLayout);
+        TypedArray type = context.obtainStyledAttributes(attrs, R.styleable.StackViewLayout);
 
         type.recycle();
         ViewConfiguration configuration = ViewConfiguration.get(getContext());

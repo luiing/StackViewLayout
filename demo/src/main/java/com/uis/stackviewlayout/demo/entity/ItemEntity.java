@@ -1,4 +1,4 @@
-package com.uis.stackview.demo.entity;
+package com.uis.stackviewlayout.demo.entity;
 
 import org.json.JSONObject;
 

@@ -20,4 +20,8 @@ android {
     }
 }
 
+dependencies{
+    compileOnly "androidx.appcompat:appcompat:${androidx}"
+}
+
 //apply from: '../../bintray.gradle'
