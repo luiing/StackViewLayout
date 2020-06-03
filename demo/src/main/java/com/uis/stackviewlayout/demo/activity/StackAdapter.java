@@ -44,7 +44,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 10;
+        return 20;
     }
 
     public static ArrayList<ItemEntity> initDataList(Context context) {
@@ -84,11 +84,16 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
             }
 
             @Override
-            public void onBindView(View view, int position) {
-                Log.e("xx","onBind="+position);
+            public void onBindView(View view, final int position) {
                 ImageView imageView = view.findViewById(R.id.imageView);
                 try{
                     Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
+                    imageView.setOnClickListener(new View.OnClickListener(){
+                        @Override
+                        public void onClick(View v) {
+                            Log.e("xx","onClicked ..."+position);
+                        }
+                    });
                 }catch (Exception ex){
                     ex.printStackTrace();
                 }
@@ -108,7 +113,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
             }
 
             @Override
-            public void onBindView(View view, int position) {
+            public void onBindView(View view, final int position) {
                 ImageView imageView = view.findViewById(R.id.imageView);
                 try{
                     Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
