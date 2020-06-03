@@ -9,12 +9,9 @@
         <attr name="stackAspectRatio" format="float"/>
         <attr name="stackEdge" format="dimension|reference" />
         <attr name="stackAutoPlay" format="boolean"/>
-        <attr name="stackEnableGesture" format="boolean"/>
         <attr name="stackModel">
             <flag name="left" value="1"/>
             <flag name="right" value="2"/>
-            <flag name="top" value="3"/>
-            <flag name="bottom" value="4"/>
         </attr>
     </declare-styleable>
 </resources>

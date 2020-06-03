@@ -13,6 +13,8 @@ import android.view.ViewGroup;
 import android.widget.Scroller;
 import androidx.core.view.ViewCompat;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +32,6 @@ public class StackViewLayout extends ViewGroup{
     private  int stackSize = 3;
     private float aspectRatio = 0;
     private boolean autoPlay = true;
-    private boolean enableGesture = true;
     private int stackModel = MODEL_RIGHT;
     private int edge = 0;
     private int paddingX = 10;
@@ -48,6 +49,8 @@ public class StackViewLayout extends ViewGroup{
     private int mDuration = 500;
     private int mDelay = 3000;
     private int childWidthMeasure,childHeightMeasure;
+    private boolean mIsDragged = false;
+    private List<Integer> padxArray = new ArrayList<>(stackSize);
 
     public StackViewLayout(Context context) {
         this(context, null);
@@ -63,7 +66,6 @@ public class StackViewLayout extends ViewGroup{
         stackSize = type.getInteger(R.styleable.StackViewLayout_stackSize,stackSize);
         aspectRatio = type.getFloat(R.styleable.StackViewLayout_stackAspectRatio,aspectRatio);
         autoPlay = type.getBoolean(R.styleable.StackViewLayout_stackAutoPlay,autoPlay);
-        enableGesture = type.getBoolean(R.styleable.StackViewLayout_stackEnableGesture,enableGesture);
         stackModel = type.getInteger(R.styleable.StackViewLayout_stackModel,stackModel);
         edge = (int)type.getDimension(R.styleable.StackViewLayout_stackEdge,edge);
         paddingX = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingX,paddingX);
@@ -85,7 +87,7 @@ public class StackViewLayout extends ViewGroup{
 
                 @Override
                 public void onBindView(View view, int position) {
-                    view.setBackgroundColor(Color.GRAY);
+                    view.setBackgroundColor(Color.LTGRAY);
                 }
 
                 @Override
@@ -100,52 +102,82 @@ public class StackViewLayout extends ViewGroup{
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = getDefaultSize(0, widthMeasureSpec);
         int height = getDefaultSize(0,heightMeasureSpec);
-        childWidthMeasure = width-2*edge-getSeriesSum(paddingX,offsetX,getOffsetXSize())-getPaddingLeft()-getPaddingRight();
+        childWidthMeasure = width-2*edge-getSeriesSum(paddingX,offsetX,getOffsetXSize()-1)-getPaddingLeft()-getPaddingRight();
         if(aspectRatio > 0){
-            height = (int)(childWidthMeasure/aspectRatio)+getPaddingTop()+getPaddingBottom();
+            height = (int)(1f*childWidthMeasure/aspectRatio)+getPaddingTop()+getPaddingBottom();
         }
         childHeightMeasure = height;
+
         setMeasuredDimension(width,height);
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        createdChildView();
+        addChildView();
+        layoutChildView();
+    }
+
+    private void layoutChildView(){
+        boolean isLeft = MODEL_LEFT == stackModel;
         int count = getChildCount();
         for(int i=0;i<count;i++){
+            int left=getPaddingLeft(),right,top=getPaddingTop(),bottom;
             View child = getChildAt(i);
-            int left = edge+getSeriesSum(paddingX,offsetX,i);
-            int right = left + childWidthMeasure;
-            int top = edge*i/5;
-            int bottom = childHeightMeasure-top;
+
+//            int index = count-1-i;//2,1,0
+//            int size = MODEL_LEFT == stackModel ? i:index;
+//            int start = MODEL_LEFT == stackModel ? paddingX-(index)*offsetX:paddingX;
+
+            if(0 == i){
+                int index = count - 3;
+                left += edge + getSeriesSum(isLeft ? paddingX-index*offsetX:paddingX, offsetX, isLeft ? i:index);
+                right = left + childWidthMeasure;
+                top += getSeriesSum(paddingY, offsetY, index);
+                bottom = childHeightMeasure - top;
+            }else if(count-1 == i){
+                left = -childWidthMeasure;
+                right = 0;
+                bottom = childHeightMeasure - top;
+            }else {
+                int index = count - 2 - i;
+                int size = isLeft ? i-1 : index;
+                int start = isLeft ? paddingX - index* offsetX : paddingX;
+                left += edge + getSeriesSum(start, offsetX, size);
+                right = left + childWidthMeasure;
+                top += getSeriesSum(paddingY, offsetY, index);
+                bottom = childHeightMeasure - top;
+            }
+            setChildMeasureDimension(child,right-left,bottom-top);
             child.layout(left,top,right,bottom);
         }
     }
 
-    private void createdChildView(){
+    private void addChildView(){
         int size = getOffsetXSize();
-        for (int i = getChildCount(); i < 1+size && size > 0; i++) {
-            int position = (current+i)%adapter.getItemCount();
+        int cnt = adapter.getItemCount();
+        for (int i = getChildCount(); i < size+2; i++) {
+            int position = (current+size-i+cnt)%cnt;
             int viewType = adapter.getItemViewType(position);
             View child = adapter.onCreateView(this, viewType);
-            child.measure(MeasureSpec.makeMeasureSpec(childWidthMeasure, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(childHeightMeasure, MeasureSpec.EXACTLY));
             addView(child);
             adapter.onBindView(child,position);
+            adapter.onPageSelected(current);
         }
+    }
+
+    private void addChildPoleView(){
+
+    }
+
+    private void setChildMeasureDimension(View child,int w,int h){
+        child.measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY));
     }
 
     private int getOffsetXSize(){
         return null==adapter ? 0 : Math.min(adapter.getItemCount(),stackSize);
     }
 
-    /**
-     * 等差数列求和
-     * @param start 起始值
-     * @param ratio 公差
-     * @param size 数量
-     * @return
-     */
+    /** 等差数列求和*/
     private int getSeriesSum(int start,int ratio,int size){
         return size*(2*start-(size-1)*ratio)/2;
     }
@@ -159,6 +191,23 @@ public class StackViewLayout extends ViewGroup{
         }else{
             endScroll();
         }
+    }
+
+    private void scrollDx(int dx){
+        int count = getChildCount();
+        int i = count-2;
+        View child = getChildAt(i);
+        int size = MODEL_LEFT == stackModel ? i-1:0;
+        int start = paddingX;
+        int left = edge+getSeriesSum(start,offsetX,size)+getPaddingLeft()+dx;
+        int right = left + childWidthMeasure;
+        int top = getPaddingTop();
+        int bottom = childHeightMeasure-top;
+        child.layout(left,top,right,bottom);
+    }
+
+    private void scrollVelocity(int velocity){
+
     }
 
     private void startScroll(){
@@ -217,26 +266,33 @@ public class StackViewLayout extends ViewGroup{
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
+        log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
         final int action = ev.getAction() & MotionEvent.ACTION_MASK;
-
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 initVelocityTracker();
                 startX = (int) ev.getX();
                 startY = (int) ev.getY();
-
                 break;
                 //fixed inner view touch
             case MotionEvent.ACTION_MOVE:
-
+                float xDistance = Math.abs(startX - ev.getX());
+                float yDistance = Math.abs(startY - ev.getY());
+                if (xDistance > yDistance && xDistance > mTouchSlop) {
+                    //水平滑动，需要拦截 在RecyclerView中需要禁止父类拦截
+                    requestDisallowInterceptTouchEvent(true);
+                    mIsDragged = true;
+                    return true;
+                }
                 default:
         }
-        return super.onInterceptTouchEvent(ev);
+        return false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if(adapter == null || adapter.getItemCount() == 0){
+        log("action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
+        if(adapter == null || adapter.getItemCount() <= 1){
             return false;
         }
         if (ev.getAction() == MotionEvent.ACTION_DOWN && ev.getEdgeFlags() != 0) {
@@ -246,22 +302,26 @@ public class StackViewLayout extends ViewGroup{
         int action = ev.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
-
+                mIsDragged = false;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if(adapter != null && adapter.getItemCount() > 1) {
+                float xDistance = Math.abs(startX - ev.getX());
+                float yDistance = Math.abs(startY - ev.getY());
+                if (xDistance > yDistance && xDistance > mTouchSlop) {
+                    requestDisallowInterceptTouchEvent(true);
+                    mIsDragged = true;
+                }
+                if(mIsDragged){
                     int currentX = (int) ev.getX();
+                    scrollDx(currentX-startX);
                 }
                 break;
             case MotionEvent.ACTION_UP:
-
             case MotionEvent.ACTION_CANCEL:
-                if(adapter != null && adapter.getItemCount() > 1) {
-                    mVelocity.computeCurrentVelocity(1000, mMaximumVelocity);
-                    int velocity = (int) mVelocity.getXVelocity();
-
-                    recycleVelocityTracker();
-                }
+                mVelocity.computeCurrentVelocity(1000, mMaximumVelocity);
+                int velocity = (int) mVelocity.getXVelocity();
+                scrollVelocity(velocity);
+                recycleVelocityTracker();
                 default:
         }
         return  true;
@@ -294,7 +354,7 @@ public class StackViewLayout extends ViewGroup{
 
         public int getItemViewType(int position){ return 0; }
 
-        public void onItemDisplay(int position) { }
+        public void onPageSelected(int position) { }
     }
 
     void log(String msg){
