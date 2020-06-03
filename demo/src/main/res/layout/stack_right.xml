@@ -4,6 +4,7 @@
     android:id="@+id/stacklayout"
     android:layout_width="match_parent"
     android:layout_height="150dp"
+    stack:stackSpace="10dp"
     stack:stackEdge="5dp"
     stack:stackSize="3">
 

@@ -3,13 +3,13 @@
     xmlns:stack="http://schemas.android.com/apk/res-auto"
     android:id="@+id/stacklayout"
     android:layout_width="match_parent"
-    android:layout_height="150dp"
-    stack:stackAspectRatio="0"
-    stack:stackPaddingX="10dp"
+    android:layout_height="wrap_content"
+    stack:stackAspectRatio="2"
+    stack:stackPaddingX="15dp"
     stack:stackOffsetX="2dp"
-    stack:stackPaddingY="10dp"
-    stack:stackOffsetY="2dp"
+    stack:stackPaddingY="20dp"
+    stack:stackOffsetY="5dp"
     stack:stackEdge="10dp"
     stack:stackSize = "3"
-    stack:stackModel="left">
+    stack:stackModel="right">
 </com.uis.stackviewlayout.StackViewLayout>
