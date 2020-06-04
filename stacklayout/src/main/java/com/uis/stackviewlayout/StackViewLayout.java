@@ -24,10 +24,10 @@ import java.util.concurrent.TimeUnit;
 
 public class StackViewLayout extends ViewGroup{
 
-    public final static int MODEL_LEFT = 1;
-    public final static int MODEL_RIGHT = 2;
-    public final static int MODEL_TOP = 3;
-    public final static int MODEL_BOTTOM = 4;
+    public final static int MODEL_LEFT = 0x01;
+    public final static int MODEL_RIGHT = 0x02;
+    public final static int MODEL_TOP = 0x04;
+    public final static int MODEL_BOTTOM = 0x08;
 
     private  int stackSize = 3;
     private float aspectRatio = 0;
@@ -39,16 +39,19 @@ public class StackViewLayout extends ViewGroup{
     private int paddingY = 10;
     private int offsetY = 2;
 
-    private int startX, startY,current;
+    private float initX,lastX,initY, lastY;
+    private int current;
     private VelocityTracker mVelocity;
     private int mMaximumVelocity;
     private int mTouchSlop;
     private Scroller mScroller;
     private ScheduledThreadPoolExecutor executor;
     private StackViewAdapter adapter;
-    private int mDuration = 500;
+    private int mDuration = 600;
     private int mDelay = 3000;
     private int childWidthMeasure,childHeightMeasure;
+
+    private int dragModel;
     private boolean mIsDragged = false;
     private List<Integer> xSpace = new ArrayList<>(stackSize);
     private List<Integer> ySpace = new ArrayList<>(stackSize);
@@ -122,7 +125,6 @@ public class StackViewLayout extends ViewGroup{
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        log("onLayout "+changed+",l="+l);
         int size = getOffsetXSize();
         for (int i = getChildCount(); i<size+2 && size>0; i++) {
             int cnt = adapter.getItemCount();
@@ -175,17 +177,23 @@ public class StackViewLayout extends ViewGroup{
             int dx = mScroller.getCurrX();
             scrollDx(dx);
             ViewCompat.postInvalidateOnAnimation(this);
-        }else{
-            endScroll();
         }
     }
 
     private void scrollDx(int dx){
+        int x = dx*childWidthMeasure/getMeasuredWidth();
         int count = getChildCount();
-        int i = count-2;
-        View child = getChildAt(i);
-
-        int left = getPaddingLeft()+edge+xSpace.get(i-1)+dx;
+        View child;
+        int left;
+        if( 0 == (dragModel&stackModel)){
+            int i = count-2;
+            child = getChildAt(i);
+            left = getPaddingLeft()+edge+xSpace.get(i-1)+x;
+        }else{
+            int i = count-1;
+            child = getChildAt(i);
+            left = getPaddingLeft()+(MODEL_LEFT == stackModel?getMeasuredWidth():-childWidthMeasure)+x;
+        }
         int right = left + childWidthMeasure;
         int top = getPaddingTop();
         int bottom = childHeightMeasure-top;
@@ -194,20 +202,24 @@ public class StackViewLayout extends ViewGroup{
 
     private void scrollVelocity(int velocity){
         int count = getChildCount();
-        int i = count-2;
-
-        View child = getChildAt(i);
-        int dx = getPaddingLeft()+edge+xSpace.get(i-1)-child.getLeft();
+        View child;
+        int dx;
+        if( 0 == (dragModel&stackModel)) {
+            int i = count - 2;
+            child = getChildAt(i);
+            dx = getPaddingLeft()+edge+xSpace.get(i-1)-child.getLeft();
+        }else{
+            int i = count-1;
+            child = getChildAt(i);
+            dx = getPaddingLeft()+(MODEL_LEFT == stackModel?getMeasuredWidth():-childWidthMeasure)-child.getLeft();
+        }
         startScroll(-dx,dx);
     }
 
     private void startScroll(int begin,int dx){
-        mScroller.startScroll(begin,0,dx,0,mDuration);
+        int mills = Math.max(mDuration*Math.abs(dx)/getMeasuredWidth(),mDuration/2);
+        mScroller.startScroll(begin,0,dx,0,mills);
         ViewCompat.postInvalidateOnAnimation(this);
-    }
-
-    private void endScroll(){
-
     }
 
     private void handleAutoPlay(boolean play){
@@ -257,32 +269,40 @@ public class StackViewLayout extends ViewGroup{
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
+        log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY()+",slop="+mTouchSlop);
         final int action = ev.getAction() & MotionEvent.ACTION_MASK;
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                mScroller.abortAnimation();
+                mIsDragged = false;
                 initVelocityTracker();
-                startX = (int) ev.getX();
-                startY = (int) ev.getY();
+                lastX = initX = ev.getX();
+                lastY = initY = ev.getY();
                 break;
                 //fixed inner view touch
             case MotionEvent.ACTION_MOVE:
-                float xDistance = Math.abs(startX - ev.getX());
-                float yDistance = Math.abs(startY - ev.getY());
-                if (xDistance > yDistance && xDistance > mTouchSlop) {
+                float dx = ev.getX() - lastX;
+                float xDistance = Math.abs(dx);
+                float yDistance = Math.abs(lastY - ev.getY());
+                if (xDistance > mTouchSlop && xDistance/2 > yDistance) {
                     //水平滑动，需要拦截 在RecyclerView中需要禁止父类拦截
                     requestDisallowInterceptTouchEvent(true);
+                    dragModel = dx > 0 ? MODEL_RIGHT : MODEL_LEFT;
+                    lastX =  dx > 0 ? initX+mTouchSlop : initX-mTouchSlop;
                     mIsDragged = true;
                     return true;
                 }
-                default:
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                scrollVelocity(0);
+                break;
         }
         return false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        log("action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
         if(adapter == null || adapter.getItemCount() <= 1){
             return false;
         }
@@ -293,18 +313,23 @@ public class StackViewLayout extends ViewGroup{
         int action = ev.getActionMasked();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                mScroller.abortAnimation();
                 mIsDragged = false;
                 break;
             case MotionEvent.ACTION_MOVE:
-                float xDistance = Math.abs(startX - ev.getX());
-                float yDistance = Math.abs(startY - ev.getY());
-                if (xDistance > yDistance && xDistance > mTouchSlop) {
-                    requestDisallowInterceptTouchEvent(true);
-                    mIsDragged = true;
+                if(!mIsDragged) {
+                    float dx = ev.getX()-lastX;
+                    float xDistance = Math.abs(dx);
+                    float yDistance = Math.abs(ev.getY() - lastY);
+                    if (xDistance > yDistance && xDistance > mTouchSlop) {
+                        requestDisallowInterceptTouchEvent(true);
+                        mIsDragged = true;
+                        dragModel = dx > 0 ? MODEL_RIGHT : MODEL_LEFT;
+                        lastX =  dx > 0 ? initX+mTouchSlop : initX-mTouchSlop;
+                    }
                 }
                 if(mIsDragged){
-                    int currentX = (int) ev.getX();
-                    scrollDx(currentX-startX);
+                    scrollDx((int)(ev.getX()-lastX));
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -313,7 +338,6 @@ public class StackViewLayout extends ViewGroup{
                 int velocity = (int) mVelocity.getXVelocity();
                 scrollVelocity(velocity);
                 recycleVelocityTracker();
-                default:
         }
         return  true;
     }
