@@ -50,7 +50,8 @@ public class StackViewLayout extends ViewGroup{
     private int mDelay = 3000;
     private int childWidthMeasure,childHeightMeasure;
     private boolean mIsDragged = false;
-    private List<Integer> padxArray = new ArrayList<>(stackSize);
+    private List<Integer> xSpace = new ArrayList<>(stackSize);
+    private List<Integer> ySpace = new ArrayList<>(stackSize);
 
     public StackViewLayout(Context context) {
         this(context, null);
@@ -73,6 +74,15 @@ public class StackViewLayout extends ViewGroup{
         paddingY = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingY,paddingY);
         offsetY = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetY,offsetY);
         type.recycle();
+
+        boolean isLeft = MODEL_LEFT == stackModel;
+        for(int i=0,size=stackSize;i<size;i++){
+            int revert = size-1-i;
+            int dx = isLeft ? getSeriesSum(paddingX-revert*offsetX,offsetX,i):getSeriesSum(paddingX,offsetX,revert);
+            int dy = getSeriesSum(paddingY,offsetY,revert);
+            xSpace.add(dx);
+            ySpace.add(dy);
+        }
 
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
@@ -101,61 +111,21 @@ public class StackViewLayout extends ViewGroup{
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = getDefaultSize(0, widthMeasureSpec);
-        int height = getDefaultSize(0,heightMeasureSpec);
+        int height = getDefaultSize(width/2,heightMeasureSpec);
         childWidthMeasure = width-2*edge-getSeriesSum(paddingX,offsetX,getOffsetXSize()-1)-getPaddingLeft()-getPaddingRight();
         if(aspectRatio > 0){
             height = (int)(1f*childWidthMeasure/aspectRatio)+getPaddingTop()+getPaddingBottom();
         }
         childHeightMeasure = height;
-
         setMeasuredDimension(width,height);
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        addChildView();
-        layoutChildView();
-    }
-
-    private void layoutChildView(){
-        boolean isLeft = MODEL_LEFT == stackModel;
-        int count = getChildCount();
-        for(int i=0;i<count;i++){
-            int left=getPaddingLeft(),right,top=getPaddingTop(),bottom;
-            View child = getChildAt(i);
-
-//            int index = count-1-i;//2,1,0
-//            int size = MODEL_LEFT == stackModel ? i:index;
-//            int start = MODEL_LEFT == stackModel ? paddingX-(index)*offsetX:paddingX;
-
-            if(0 == i){
-                int index = count - 3;
-                left += edge + getSeriesSum(isLeft ? paddingX-index*offsetX:paddingX, offsetX, isLeft ? i:index);
-                right = left + childWidthMeasure;
-                top += getSeriesSum(paddingY, offsetY, index);
-                bottom = childHeightMeasure - top;
-            }else if(count-1 == i){
-                left = -childWidthMeasure;
-                right = 0;
-                bottom = childHeightMeasure - top;
-            }else {
-                int index = count - 2 - i;
-                int size = isLeft ? i-1 : index;
-                int start = isLeft ? paddingX - index* offsetX : paddingX;
-                left += edge + getSeriesSum(start, offsetX, size);
-                right = left + childWidthMeasure;
-                top += getSeriesSum(paddingY, offsetY, index);
-                bottom = childHeightMeasure - top;
-            }
-            setChildMeasureDimension(child,right-left,bottom-top);
-            child.layout(left,top,right,bottom);
-        }
-    }
-
-    private void addChildView(){
+        log("onLayout "+changed+",l="+l);
         int size = getOffsetXSize();
-        int cnt = adapter.getItemCount();
-        for (int i = getChildCount(); i < size+2; i++) {
+        for (int i = getChildCount(); i<size+2 && size>0; i++) {
+            int cnt = adapter.getItemCount();
             int position = (current+size-i+cnt)%cnt;
             int viewType = adapter.getItemViewType(position);
             View child = adapter.onCreateView(this, viewType);
@@ -163,10 +133,27 @@ public class StackViewLayout extends ViewGroup{
             adapter.onBindView(child,position);
             adapter.onPageSelected(current);
         }
+        layoutChildView();
     }
 
-    private void addChildPoleView(){
-
+    private void layoutChildView(){
+        int count = getChildCount();
+        for(int i=0;i<count;i++){
+            int left=getPaddingLeft(),right,top=getPaddingTop(),bottom;
+            View child = getChildAt(i);
+            if(i==count-1){
+                boolean isLeft = MODEL_LEFT == stackModel;
+                left += isLeft ? getMeasuredWidth():-childWidthMeasure;
+            }else {
+                int index = Math.max(0, i - 1);
+                left += edge + xSpace.get(index);
+                top += ySpace.get(index);
+            }
+            bottom = childHeightMeasure - top;
+            right = left + childWidthMeasure;
+            setChildMeasureDimension(child,right-left,bottom-top);
+            child.layout(left,top,right,bottom);
+        }
     }
 
     private void setChildMeasureDimension(View child,int w,int h){
@@ -185,8 +172,8 @@ public class StackViewLayout extends ViewGroup{
     @Override
     public void computeScroll() {
         if(!mScroller.isFinished() && mScroller.computeScrollOffset()){
-            int dy = mScroller.getCurrY();
-            scrollTo(0,dy);
+            int dx = mScroller.getCurrX();
+            scrollDx(dx);
             ViewCompat.postInvalidateOnAnimation(this);
         }else{
             endScroll();
@@ -197,9 +184,8 @@ public class StackViewLayout extends ViewGroup{
         int count = getChildCount();
         int i = count-2;
         View child = getChildAt(i);
-        int size = MODEL_LEFT == stackModel ? i-1:0;
-        int start = paddingX;
-        int left = edge+getSeriesSum(start,offsetX,size)+getPaddingLeft()+dx;
+
+        int left = getPaddingLeft()+edge+xSpace.get(i-1)+dx;
         int right = left + childWidthMeasure;
         int top = getPaddingTop();
         int bottom = childHeightMeasure-top;
@@ -207,11 +193,16 @@ public class StackViewLayout extends ViewGroup{
     }
 
     private void scrollVelocity(int velocity){
+        int count = getChildCount();
+        int i = count-2;
 
+        View child = getChildAt(i);
+        int dx = getPaddingLeft()+edge+xSpace.get(i-1)-child.getLeft();
+        startScroll(-dx,dx);
     }
 
-    private void startScroll(){
-        mScroller.startScroll(getScrollX(),getScrollY(),0,0,mDuration);
+    private void startScroll(int begin,int dx){
+        mScroller.startScroll(begin,0,dx,0,mDuration);
         ViewCompat.postInvalidateOnAnimation(this);
     }
 
