@@ -10,6 +10,7 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.Interpolator;
 import android.widget.Scroller;
 import androidx.core.view.ViewCompat;
 
@@ -53,8 +54,18 @@ public class StackViewLayout extends ViewGroup{
 
     private int dragModel;
     private boolean mIsDragged = false;
+    private boolean mIsFling = false;
+
     private List<Integer> xSpace = new ArrayList<>(stackSize);
     private List<Integer> ySpace = new ArrayList<>(stackSize);
+
+    private static final Interpolator sInterpolator = new Interpolator() {
+        @Override
+        public float getInterpolation(float t) {
+            t -= 1.0f;
+            return t * t * t * t * t + 1.0f;
+        }
+    };
 
     public StackViewLayout(Context context) {
         this(context, null);
@@ -90,7 +101,7 @@ public class StackViewLayout extends ViewGroup{
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
         mTouchSlop = configuration.getScaledTouchSlop();
-        mScroller = new Scroller(context);
+        mScroller = new Scroller(context,sInterpolator);
         if(isInEditMode()){
             adapter = new StackViewAdapter() {
                 @Override
@@ -109,6 +120,18 @@ public class StackViewLayout extends ViewGroup{
                 }
             };
         }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        startAutoPlay();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopAutoPlay(true);
     }
 
     @Override
@@ -177,6 +200,8 @@ public class StackViewLayout extends ViewGroup{
             int dx = mScroller.getCurrX();
             scrollDx(dx);
             ViewCompat.postInvalidateOnAnimation(this);
+        }else{
+            nextPage();
         }
     }
 
@@ -200,20 +225,66 @@ public class StackViewLayout extends ViewGroup{
         child.layout(left,top,right,bottom);
     }
 
+    private void resetTouch(){
+        mScroller.abortAnimation();
+        stopAutoPlay(false);
+    }
+
+    private int getSign(){
+        return MODEL_LEFT == stackModel?1:-1;
+    }
+
     private void scrollVelocity(int velocity){
         int count = getChildCount();
         View child;
         int dx;
+        int sign;
         if( 0 == (dragModel&stackModel)) {
             int i = count - 2;
             child = getChildAt(i);
             dx = getPaddingLeft()+edge+xSpace.get(i-1)-child.getLeft();
+            sign = getSign();
         }else{
             int i = count-1;
             child = getChildAt(i);
             dx = getPaddingLeft()+(MODEL_LEFT == stackModel?getMeasuredWidth():-childWidthMeasure)-child.getLeft();
+            sign = -getSign();
         }
-        startScroll(-dx,dx);
+        if(velocity*sign>getMeasuredWidth() || -dx*sign>0.45*childWidthMeasure){
+            int dnx = dx+sign*(getMeasuredWidth()+edge);
+            startScroll(-dx,dnx);
+            mIsFling = true;
+        }else {
+            startScroll(-dx, dx);
+        }
+        startAutoPlay();
+    }
+
+    private void autoScroll(){
+        if(mScroller.isFinished() && adapter!=null && adapter.getItemCount()>1){
+            dragModel = MODEL_LEFT==stackModel ? MODEL_RIGHT:MODEL_LEFT;
+            scrollVelocity(2*getMeasuredWidth()*getSign());
+        }
+    }
+
+    private void nextPage(){
+        if(mIsFling) {
+            mIsFling = false;
+            int cnt = adapter.getItemCount();
+            if (0 == (dragModel & stackModel)){
+                current = (current+1)%cnt;
+                int position = (current+stackSize)%cnt;
+                int viewType = adapter.getItemViewType(position);
+                View child = adapter.onCreateView(this, viewType);
+                addView(child,0);
+                removeViewAt(getChildCount() - 1);
+                adapter.onBindView(child,position);
+                adapter.onPageSelected(current);
+            } else {
+                current = (current-1+cnt)%cnt;
+                removeViewAt(0);
+            }
+        }
     }
 
     private void startScroll(int begin,int dx){
@@ -222,28 +293,42 @@ public class StackViewLayout extends ViewGroup{
         ViewCompat.postInvalidateOnAnimation(this);
     }
 
-    private void handleAutoPlay(boolean play){
-        if(play) {
-            if(executor == null || executor.isShutdown()){
+    private void startAutoPlay(){
+        if(autoPlay) {
+            if (executor == null || executor.isShutdown()) {
                 executor = new ScheduledThreadPoolExecutor(1);
+            }
+            if (executor.getQueue().size() <= 0) {
                 executor.scheduleWithFixedDelay(new Runnable() {
                     @Override
                     public void run() {
-
+                        autoScroll();
                     }
                 }, mDelay, mDelay, TimeUnit.MILLISECONDS);
             }
-        }else{
+        }
+    }
+
+    private void stopAutoPlay(boolean force){
+        if(force) {
             if(executor != null && !executor.isShutdown()) {
                 executor.shutdownNow();
                 executor = null;
+            }
+        }else{
+            if(executor != null){
+                executor.getQueue().clear();
             }
         }
     }
 
     public void setAutoPlay(boolean autoPlay){
         this.autoPlay = autoPlay;
-        handleAutoPlay(autoPlay);
+        if(autoPlay){
+            startAutoPlay();
+        }else{
+            stopAutoPlay(false);
+        }
     }
 
     public void setAdapter(StackViewAdapter adapter) {
@@ -256,24 +341,15 @@ public class StackViewLayout extends ViewGroup{
     }
 
     @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        handleAutoPlay(autoPlay);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        handleAutoPlay(false);
-    }
-
-    @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY()+",slop="+mTouchSlop);
+        if(adapter == null || adapter.getItemCount() <= 1){
+            return false;
+        }
         final int action = ev.getAction() & MotionEvent.ACTION_MASK;
         switch (action) {
             case MotionEvent.ACTION_DOWN:
-                mScroller.abortAnimation();
+                resetTouch();
                 mIsDragged = false;
                 initVelocityTracker();
                 lastX = initX = ev.getX();
@@ -293,16 +369,13 @@ public class StackViewLayout extends ViewGroup{
                     return true;
                 }
                 break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                scrollVelocity(0);
-                break;
         }
         return false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
+        log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
         if(adapter == null || adapter.getItemCount() <= 1){
             return false;
         }
@@ -312,10 +385,6 @@ public class StackViewLayout extends ViewGroup{
         mVelocity.addMovement(ev);
         int action = ev.getActionMasked();
         switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                mScroller.abortAnimation();
-                mIsDragged = false;
-                break;
             case MotionEvent.ACTION_MOVE:
                 if(!mIsDragged) {
                     float dx = ev.getX()-lastX;
@@ -340,10 +409,6 @@ public class StackViewLayout extends ViewGroup{
                 recycleVelocityTracker();
         }
         return  true;
-    }
-
-    private void resetTouch(){
-
     }
 
     private void initVelocityTracker() {
