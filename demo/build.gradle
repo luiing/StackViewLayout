@@ -30,5 +30,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation "androidx.viewpager:viewpager:${androidx}"
     implementation 'com.facebook.fresco:fresco:2.2.0'
+    implementation project(':stackviewlayout')
     implementation project(':stacklayout')
 }

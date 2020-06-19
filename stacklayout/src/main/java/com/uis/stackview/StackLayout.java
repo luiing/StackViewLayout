@@ -413,7 +413,7 @@ public class StackLayout extends ViewGroup implements ValueAnimator.AnimatorUpda
             }
         }
         if (view == null && getAdapter() != null){
-            view = getAdapter().onCreateView(this,0);
+            view = getAdapter().onCreateView(this);
             view.measure(View.MeasureSpec.makeMeasureSpec(everyWidth,View.MeasureSpec.EXACTLY),
                     View.MeasureSpec.makeMeasureSpec(everyHeight,View.MeasureSpec.EXACTLY));
         }
@@ -719,7 +719,7 @@ public class StackLayout extends ViewGroup implements ValueAnimator.AnimatorUpda
 
     public static abstract class StackAdapter{
 
-        public abstract View onCreateView(ViewGroup parent,int viewType);
+        public abstract View onCreateView(ViewGroup parent);
 
         public abstract void onBindView(View view, int position);
 
