@@ -1,4 +1,4 @@
-package com.uis.stackviewlayout;
+package com.uis.stackview;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -16,7 +16,6 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -28,10 +27,12 @@ import java.util.concurrent.TimeUnit;
  * @author  uis 2018/10/30
  */
 
-public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpdateListener{
+public class StackLayout extends ViewGroup implements ValueAnimator.AnimatorUpdateListener{
 
     public final static int MODEL_LEFT = 1;
     public final static int MODEL_RIGHT = 2;
+    public final static int MODEL_TOP = 3;
+    public final static int MODEL_BOTTOM = 4;
     public final static int MODEL_NONE = 0;
 
     /** 层叠之间间距 */
@@ -79,18 +80,25 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
     private int mDuration = 500;
     private int mDelay = 3000;
 
-    public StackLayout1(Context context) {
+    public StackLayout(Context context) {
         this(context, null);
     }
 
-    public StackLayout1(Context context, AttributeSet attrs) {
+    public StackLayout(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public StackLayout1(Context context, AttributeSet attrs, int defStyleAttr) {
+    public StackLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        TypedArray type = context.obtainStyledAttributes(attrs, R.styleable.StackViewLayout);
-
+        TypedArray type = context.obtainStyledAttributes(attrs, R.styleable.StackLayout);
+        stackSpace =  (int)type.getDimension(R.styleable.StackLayout_stackSpace, stackSpace);
+        stackEdge = (int)type.getDimension(R.styleable.StackLayout_stackEdge,stackEdge);
+        stackZoomX = type.getFloat(R.styleable.StackLayout_stackZoomX, stackZoomX);
+        stackPadX = (int)type.getDimension(R.styleable.StackLayout_stackPadX,stackPadX);
+        stackZoomY = type.getFloat(R.styleable.StackLayout_stackZoomY, stackZoomY);
+        stackSize = type.getInteger(R.styleable.StackLayout_stackSize,stackSize);
+        stackLooper = type.getBoolean(R.styleable.StackLayout_stackLooper,stackLooper);
+        stackEdgeModel = type.getInteger(R.styleable.StackLayout_stackEdgeModel,stackEdgeModel);
         type.recycle();
         ViewConfiguration configuration = ViewConfiguration.get(getContext());
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
@@ -271,7 +279,7 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
     }
 
     public void setPosition(int position){
-        StackLayout1.StackAdapter adapter = getAdapter();
+        StackLayout.StackAdapter adapter = getAdapter();
         if(displayPosition != position && adapter != null && adapter.getItemCount() > 0){
             position %= adapter.getItemCount();
             displayPosition = position;
@@ -297,11 +305,6 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
      */
     public void setLooperDelay(int mills){
         mDelay = mills;
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -410,9 +413,9 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
             }
         }
         if (view == null && getAdapter() != null){
-            view = getAdapter().onCreateView(this,0);
-            view.measure(MeasureSpec.makeMeasureSpec(everyWidth, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(everyHeight, MeasureSpec.EXACTLY));
+            view = getAdapter().onCreateView(this);
+            view.measure(View.MeasureSpec.makeMeasureSpec(everyWidth,View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(everyHeight,View.MeasureSpec.EXACTLY));
         }
         return view;
     }
@@ -586,18 +589,18 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
     }
 
     static class AutoRunnable implements Runnable{
-        WeakReference<StackLayout1> weakHelper;
+        WeakReference<StackLayout> weakHelper;
 
-        AutoRunnable(StackLayout1 stack) {
+        AutoRunnable(StackLayout stack) {
             weakHelper = new WeakReference<>(stack);
         }
 
         @Override
         public void run() {
             try {
-                StackLayout1 helper = weakHelper.get();
+                StackLayout helper = weakHelper.get();
                 if (helper != null && helper.getItemCount() > 1 && helper.getChildCount() > 0) {
-                    StackLayout1 stack = helper;
+                    StackLayout stack = helper;
                     int[] points = new int[2];
                     stack.getLocationInWindow(points);
                     if (points[1] < Resources.getSystem().getDisplayMetrics().heightPixels) {
@@ -620,15 +623,15 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
     }
 
     static class AutoScrollRunnable implements Runnable{
-        WeakReference<StackLayout1> weakHelper;
+        WeakReference<StackLayout> weakHelper;
 
-        AutoScrollRunnable(StackLayout1 weakHelper) {
+        AutoScrollRunnable(StackLayout weakHelper) {
             this.weakHelper = new WeakReference<>(weakHelper);
         }
 
         @Override
         public void run() {
-            StackLayout1 helper = weakHelper.get();
+            StackLayout helper = weakHelper.get();
             if(helper != null) {
                 helper.autoScroll();
             }
@@ -702,7 +705,7 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
             }
         }
 
-        void endAnimator(StackLayout1 helper){
+        void endAnimator(StackLayout helper){
             if(needRemoveTopView && helper != null) {
                 helper.removeStackView(mAnimatorView);
             }
@@ -716,7 +719,7 @@ public class StackLayout1 extends ViewGroup implements ValueAnimator.AnimatorUpd
 
     public static abstract class StackAdapter{
 
-        public abstract View onCreateView(ViewGroup parent,int viewType);
+        public abstract View onCreateView(ViewGroup parent);
 
         public abstract void onBindView(View view, int position);
 

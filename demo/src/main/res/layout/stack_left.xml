@@ -7,9 +7,10 @@
     stack:stackAspectRatio="2"
     stack:stackPaddingX="15dp"
     stack:stackOffsetX="2dp"
-    stack:stackPaddingY="20dp"
-    stack:stackOffsetY="5dp"
+    stack:stackPaddingY="10dp"
+    stack:stackOffsetY="3dp"
     stack:stackEdge="10dp"
     stack:stackSize = "3"
-    stack:stackModel="right">
+    stack:stackAutoPlay="false"
+    stack:stackModel="left">
 </com.uis.stackviewlayout.StackViewLayout>
