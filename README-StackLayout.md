@@ -20,7 +20,7 @@
 
  #### Captures
 
-![效果图](images/image_normal) ![效果图](images/image_left) ![效果图](images/image_right)
+![效果图](images/image_normal.jpg) ![效果图](images/image_left.jpg) ![效果图](images/image_right.jpg)
 
 ### Use
     implementation 'com.uis:stacklayout:0.5.0'
