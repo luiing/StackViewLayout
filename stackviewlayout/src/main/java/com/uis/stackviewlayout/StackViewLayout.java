@@ -4,7 +4,9 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -32,9 +34,9 @@ public class StackViewLayout extends ViewGroup{
     private float aspectRatio = 0;
     private boolean autoPlay = true;
     private int stackModel = MODEL_RIGHT;
-    private int edge = 0;
+    private int edge = 10;
     private int paddingX = 10;
-    private int offsetX = 0;
+    private int offsetX = 2;
     private int paddingY = 10;
     private int offsetY = 2;
 
@@ -53,6 +55,7 @@ public class StackViewLayout extends ViewGroup{
     private int dragModel;
     private boolean mIsDragged = false;
     private boolean mIsFling = false;
+    private boolean continuePlay = false;
 
     private List<Integer> xSpace = new ArrayList<>(stackSize);
     private List<Integer> ySpace = new ArrayList<>(stackSize);
@@ -80,11 +83,12 @@ public class StackViewLayout extends ViewGroup{
         aspectRatio = type.getFloat(R.styleable.StackViewLayout_stackAspectRatio,aspectRatio);
         autoPlay = type.getBoolean(R.styleable.StackViewLayout_stackAutoPlay,autoPlay);
         stackModel = type.getInteger(R.styleable.StackViewLayout_stackModel,stackModel);
-        edge = (int)type.getDimension(R.styleable.StackViewLayout_stackEdge,edge);
-        paddingX = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingX,paddingX);
-        offsetX = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetX,offsetX);
-        paddingY = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingY,paddingY);
-        offsetY = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetY,offsetY);
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        edge = (int)type.getDimension(R.styleable.StackViewLayout_stackEdge,dp(edge,metrics));
+        paddingX = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingX,dp(paddingX,metrics));
+        offsetX = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetX,dp(offsetX,metrics));
+        paddingY = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingY,dp(paddingY,metrics));
+        offsetY = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetY,dp(offsetY,metrics));
         type.recycle();
 
         boolean isLeft = MODEL_LEFT == stackModel;
@@ -118,6 +122,10 @@ public class StackViewLayout extends ViewGroup{
                 }
             };
         }
+    }
+
+    private int dp(int dp,DisplayMetrics metrics){
+        return (int)(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,dp,metrics)+0.5f);
     }
 
     @Override
@@ -166,19 +174,19 @@ public class StackViewLayout extends ViewGroup{
     private void layoutChildView(){
         int count = getChildCount();
         for(int i=0;i<count;i++){
-            int left=getPaddingLeft(),right,top=getPaddingTop(),bottom;
+            int left=getPaddingLeft(),right,top=0,bottom;
             View child = getChildAt(i);
             if(i==count-1){
                 left +=  MODEL_LEFT == stackModel ? getMeasuredWidth():-childWidthMeasure;
             }else {
                 int index = Math.max(0, i - 1);
                 left += edge + xSpace.get(index);
-                top += ySpace.get(index);
+                top = ySpace.get(index);
             }
-            bottom = childHeightMeasure - 2*top;
+            bottom = childHeightMeasure - top;
             right = left + childWidthMeasure;
-
-            child.setScaleY(1.0f*(bottom-top)/childHeightMeasure);
+            float scale = 1.0f*(bottom-top)/childHeightMeasure;
+            child.setScaleY(scale);
             top = getPaddingTop();
             bottom = childHeightMeasure - top;
             child.layout(left,top,right,bottom);
@@ -217,26 +225,37 @@ public class StackViewLayout extends ViewGroup{
     private void scrollDx(int dx){
         int x = dx*childWidthMeasure/getMeasuredWidth();
         int count = getChildCount();
-        float ratio = 1.0f*x/childWidthMeasure;
-
+        float percent = 1f*getSign()*x/childWidthMeasure;
+        percent = Math.max(-1f,Math.min(1f,percent));
         View child;
         int top = getPaddingTop();
         int left = getPaddingLeft();
         if( 0 == (dragModel&stackModel)){
             int i = count-2;
-//            for(int k=0;k<i;k++){
-//                getChildAt(i).setScaleY(1);
-//            }
+            for(int k=1;k<i;k++){
+                float h = childHeightMeasure - 2*ySpace.get(k-1) + 2f*percent*(ySpace.get(k-1)-ySpace.get(k));
+                float scale = h/childHeightMeasure;
+                child = getChildAt(k);
+                child.setScaleY(scale);
+                int cleft = left+edge + xSpace.get(k-1) + (int)(percent*(xSpace.get(k)-xSpace.get(k-1)));
+                child.layout(cleft,top,cleft + childWidthMeasure,childHeightMeasure-top);
+            }
             child = getChildAt(i);
             left += edge+xSpace.get(i-1)+x;
         }else{
             int i = count-1;
+            for(int k=2;k<i;k++){
+                float h = childHeightMeasure - 2*ySpace.get(k-1) - 2f*percent*(ySpace.get(k-1)-ySpace.get(k-2));
+                float scale = h/childHeightMeasure;
+                child = getChildAt(k);
+                child.setScaleY(scale);
+                int cleft = left+edge + xSpace.get(k-1) - (int)(percent*(xSpace.get(k-2)-xSpace.get(k-1)));
+                child.layout(cleft,top,cleft + childWidthMeasure,childHeightMeasure-top);
+            }
             child = getChildAt(i);
             left += (MODEL_LEFT == stackModel?getMeasuredWidth():-childWidthMeasure)+x;
         }
-        int right = left + childWidthMeasure;
-        int bottom = childHeightMeasure-top;
-        child.layout(left,top,right,bottom);
+        child.layout(left,top,left + childWidthMeasure,childHeightMeasure-top);
     }
 
     private void resetTouch(){
@@ -265,13 +284,13 @@ public class StackViewLayout extends ViewGroup{
             sign = -getSign();
         }
         if(velocity*sign>getMeasuredWidth() || -dx*sign>0.3*childWidthMeasure){
-            int dnx = dx+sign*(getMeasuredWidth()+edge);
+            int dnx = dx+sign*(childWidthMeasure+edge)*getMeasuredWidth()/childWidthMeasure;
             startScroll(-dx,dnx);
             mIsFling = true;
         }else {
             startScroll(-dx, dx);
         }
-        startAutoPlay();
+        continuePlay = true;
     }
 
     private void autoScroll(){
@@ -298,6 +317,10 @@ public class StackViewLayout extends ViewGroup{
                 current = (current-1+cnt)%cnt;
                 removeViewAt(0);
             }
+        }
+        if(continuePlay){
+            continuePlay = false;
+            startAutoPlay();
         }
     }
 
@@ -347,16 +370,43 @@ public class StackViewLayout extends ViewGroup{
 
     public void setAdapter(StackViewAdapter adapter) {
         this.adapter = adapter;
-        requestLayout();
+        notifyDataChanged();
+    }
+
+    public void notifyDataChanged(){
+        mScroller.abortAnimation();
+        removeAllViews();
+    }
+
+    public void setDurationTime(int duration,int delay){
+        this.mDuration  = duration;
+        this.mDelay = delay;
+        stopAutoPlay(false);
+        startAutoPlay();
     }
 
     public StackViewAdapter getAdapter(){
         return adapter;
     }
 
+    public void setCurrentItem(int item){
+        if(adapter != null && adapter.getItemCount() > 0) {
+            if (item < 0) {
+                item = 0;
+            } else if (item >= adapter.getItemCount()){
+                item = adapter.getItemCount()-1;
+            }
+            if(current != item) {
+                mScroller.abortAnimation();
+                current = item;
+                removeAllViews();
+            }
+        }
+    }
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY()+",slop="+mTouchSlop);
+        //log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY()+",slop="+mTouchSlop);
         if(adapter == null || adapter.getItemCount() <= 1){
             return false;
         }
@@ -389,7 +439,7 @@ public class StackViewLayout extends ViewGroup{
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
+        //log(" action="+ev.getAction()+",x="+ev.getX()+",y="+ev.getY());
         if(adapter == null || adapter.getItemCount() <= 1){
             return false;
         }
