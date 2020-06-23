@@ -4,7 +4,7 @@
     3.支持缩放滑动、连续滑动
 
 #### Captures
-![效果图](/images/image_normal.png) ![效果图](/images/image_left.n) ![效果图](/images/image_right.n)
+![效果图](/images/image_normal.png) ![效果图](/images/image_left.png) ![效果图](/images/image_right.png)
 
 ### Use
     implementation 'com.uis:stackviewlayout:0.1.0'
