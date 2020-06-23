@@ -1,22 +1,27 @@
 # StackViewLayout
-#### Captures
+    1.支持布局预览、宽高比设置
+    2.支持自动播放、左右布局
+    3.支持缩放滑动、连续滑动
 
-![效果图]()
+#### Captures
+![效果图](images/image_normal) ![效果图](images/image_left) ![效果图](images/image_right)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.5.0'
+    implementation 'com.uis:stackviewlayout:0.1.0'
+
+### [老版本](README-StackLayout.md)
 
 *Name*| *Descript*|*Value*
   -----|--------|---
-stackSpace|间距(space)|默认值(default)：10dp
-stackEdge|边界距离(edge)|默认值(default)：10dp
-stackZoomX|x方向缩放(x zoom)| 0<x<=1,1表示等间距，默认值(default)：1
-stackPadX|x方向偏移(x padding)|表示偏移间距,默认值：0
-stackPadX|PadX*(Size-1) < Space|PadX优先级高于ZoomX
-stackZoomY|y方向缩放(y zoom)| 0<y<=1,1表示和顶层等高度，默认值：0.9
-stackLooper|自动轮播(looper)|false/true
-stackSize|层叠数量(stack size)|3
 stackEdgeModel|层叠位置(stack model)|left/right
+stackEdge|边界距离(edge)|默认值(default)：10dp
+stackPaddingX|x方向偏移距离|10dp
+stackOffsetX|x方向偏移因子|2dp
+stackPaddingY|y方向偏移距离|10dp
+stackOffsetY|y方向偏移因子|2dp
+stackAutoPlay|自动轮播(looper)|true
+stackSize|层叠数量(stack size)|3
+stackAspectRatio|宽高比,宽度须有值|0
 
 ### License
 

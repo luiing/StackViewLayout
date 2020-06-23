@@ -100,6 +100,11 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
             }
 
             @Override
+            public void onPageSelected(int position) {
+                Log.e("xx","page="+position);
+            }
+
+            @Override
             public int getItemCount() {
                 return stackData.size();
             }

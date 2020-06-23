@@ -1,5 +1,4 @@
 # StackLayout
-**A swipe ViewGroup that supports left and right slide.**
 
 **层叠View支持手势左右滑动，自动轮播，过渡动画**
 
@@ -21,10 +20,10 @@
 
  #### Captures
 
-![效果图]()
+![效果图](images/image_normal) ![效果图](images/image_left) ![效果图](images/image_right)
 
 ### Use
-    implementation 'com.uis:stacklayout:0.3.4'
+    implementation 'com.uis:stacklayout:0.5.0'
 
 *Name*| *Descript*|*Value*
   -----|--------|---
