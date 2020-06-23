@@ -80,22 +80,31 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
             @Override
             public View onCreateView(ViewGroup parent,int viewType) {
-                return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
+                return LayoutInflater.from(parent.getContext()).inflate(
+                2==viewType?R.layout.item_text:R.layout.item_layout,parent,false);
+            }
+
+            @Override
+            public int getItemViewType(int position) {
+                return 2==position?2:0;
             }
 
             @Override
             public void onBindView(View view, final int position) {
-                ImageView imageView = view.findViewById(R.id.imageView);
-                try{
-                    Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
-                    imageView.setOnClickListener(new View.OnClickListener(){
-                        @Override
-                        public void onClick(View v) {
-                            Log.e("xx","onClicked ..."+position);
-                        }
-                    });
-                }catch (Exception ex){
-                    ex.printStackTrace();
+                int viewType = getItemViewType(position);
+                if(0 == viewType) {
+                    ImageView imageView = view.findViewById(R.id.imageView);
+                    try {
+                        Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
+                        imageView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                Log.e("xx", "onClicked ..." + position);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
 
