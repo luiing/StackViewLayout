@@ -9,7 +9,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.android.tools.build:gradle:4.0.0'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
@@ -29,7 +29,7 @@ task clean(type: Delete) {
 
 ext{
     androidx = '1.0.0'
-    compileVer = 28
+    compileVer = 29
     minVer = 15
-    buildVer = '28.0.3'
+    buildVer = '29.0.3'
 }

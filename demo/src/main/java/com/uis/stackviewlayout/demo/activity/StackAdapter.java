@@ -1,15 +1,16 @@
-package com.uis.stackview.demo.activity;
+package com.uis.stackviewlayout.demo.activity;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import com.bumptech.glide.Glide;
-import com.facebook.drawee.view.SimpleDraweeView;
-import com.uis.stackview.demo.R;
-import com.uis.stackview.demo.entity.ItemEntity;
 import com.uis.stackview.StackLayout;
+import com.uis.stackview.demo.R;
+import com.uis.stackviewlayout.demo.entity.ItemEntity;
+import com.uis.stackviewlayout.StackViewLayout;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.InputStream;
@@ -43,7 +44,7 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
 
     @Override
     public int getItemCount() {
-        return 10;
+        return 2;
     }
 
     public static ArrayList<ItemEntity> initDataList(Context context) {
@@ -72,23 +73,61 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
         return dataList;
     }
 
-    public static class ViewHolder {
-        ImageView imageView;
-        SimpleDraweeView dv;
-    }
-
     static class StackVH extends RecyclerView.ViewHolder{
-        StackLayout stackLayout;
+        StackViewLayout stackLayout;
         List<ItemEntity> stackData = new ArrayList<>();
-        StackLayout.StackAdapter adapter = new StackLayout.StackAdapter() {
+        StackViewLayout.StackViewAdapter adapter = new StackViewLayout.StackViewAdapter() {
 
+            @Override
+            public View onCreateView(ViewGroup parent,int viewType) {
+                return LayoutInflater.from(parent.getContext()).inflate(
+                2==viewType?R.layout.item_text:R.layout.item_layout,parent,false);
+            }
+
+            @Override
+            public int getItemViewType(int position) {
+                return 2==position?2:0;
+            }
+
+            @Override
+            public void onBindView(View view, final int position) {
+                int viewType = getItemViewType(position);
+                if(0 == viewType) {
+                    ImageView imageView = view.findViewById(R.id.imageView);
+                    try {
+                        Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
+                        imageView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                Log.e("xx", "onClicked ..." + position);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                Log.e("xx","page="+position);
+            }
+
+            @Override
+            public int getItemCount() {
+                return stackData.size();
+            }
+        };
+
+        StackLayout layout;
+        StackLayout.StackAdapter adapter1 = new StackLayout.StackAdapter() {
             @Override
             public View onCreateView(ViewGroup parent) {
                 return LayoutInflater.from(parent.getContext()).inflate(R.layout.item_layout,parent,false);
             }
 
             @Override
-            public void onBindView(View view, int position) {
+            public void onBindView(View view, final int position) {
                 ImageView imageView = view.findViewById(R.id.imageView);
                 try{
                     Glide.with(view.getContext()).load(stackData.get(position).getMapImageUrl()).into(imageView);
@@ -101,25 +140,23 @@ public class StackAdapter extends RecyclerView.Adapter<StackAdapter.StackVH> {
             public int getItemCount() {
                 return stackData.size();
             }
-
-            @Override
-            public void onItemDisplay(int position) {
-
-            }
         };
 
         public StackVH(boolean left,ViewGroup parent) {
             super(LayoutInflater.from(parent.getContext()).inflate(
                     left ? R.layout.stack_left : R.layout.stack_right,parent,false));
-            stackLayout = itemView.findViewById(R.id.stacklayout);
+            if(left)
+                stackLayout = itemView.findViewById(R.id.stacklayout);
+            else
+                layout = itemView.findViewById(R.id.stacklayout);
         }
 
         public void binderVH(final List<ItemEntity> dataList){
             stackData = dataList;
-            if(stackLayout.getAdapter() == null) {
+            if(stackLayout != null && stackLayout.getAdapter() == null) {
                 stackLayout.setAdapter(adapter);
-            }else{
-                stackLayout.notifyDataChanged();
+            }else if(layout != null && layout.getAdapter() == null){
+                layout.setAdapter(adapter1);
             }
         }
     }

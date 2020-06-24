@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="StackViewLayout">
+        <attr name="stackPaddingX" format="dimension|reference" />
+        <attr name="stackOffsetX" format="dimension|reference" />
+        <attr name="stackPaddingY" format="dimension|reference" />
+        <attr name="stackOffsetY" format="dimension|reference" />
+        <attr name="stackSize" format="integer"/>
+        <attr name="stackAspectRatio" format="float"/>
+        <attr name="stackEdge" format="dimension|reference" />
+        <attr name="stackAutoPlay" format="boolean"/>
+        <attr name="stackModel">
+            <flag name="left" value="1"/>
+            <flag name="right" value="2"/>
+        </attr>
+    </declare-styleable>
+</resources>
