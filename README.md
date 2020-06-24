@@ -9,7 +9,7 @@
 ### Use
     implementation 'com.uis:stackviewlayout:0.1.0'
 
-### [老版本](README-StackLayout.md)
+### [老版本StackLayout](README-StackLayout.md)
 
 *Name*| *Descript*|*Value*
   -----|--------|---
@@ -21,7 +21,7 @@ stackPaddingY|y方向偏移距离|10dp
 stackOffsetY|y方向偏移因子|2dp
 stackAutoPlay|自动轮播(looper)|true
 stackSize|层叠数量(stack size)|3
-stackAspectRatio|宽高比,宽度须有值|0
+stackAspectRatio|顶层宽高比,宽度须有值|0
 
 ### License
 
