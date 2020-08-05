@@ -89,6 +89,8 @@ public class StackViewLayout extends ViewGroup{
         offsetX = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetX,dp(offsetX,metrics));
         paddingY = (int)type.getDimension(R.styleable.StackViewLayout_stackPaddingY,dp(paddingY,metrics));
         offsetY = (int)type.getDimension(R.styleable.StackViewLayout_stackOffsetY,dp(offsetY,metrics));
+        mDuration = type.getInteger(R.styleable.StackViewLayout_stackDuration,mDuration);
+        mDelay = type.getInteger(R.styleable.StackViewLayout_stackDelay,mDelay);
         type.recycle();
 
         boolean isLeft = MODEL_LEFT == stackModel;
@@ -432,6 +434,10 @@ public class StackViewLayout extends ViewGroup{
                     mIsDragged = true;
                     return true;
                 }
+                break;
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                startAutoPlay();
                 break;
         }
         return false;

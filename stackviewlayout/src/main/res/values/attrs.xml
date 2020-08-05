@@ -9,6 +9,8 @@
         <attr name="stackAspectRatio" format="float"/>
         <attr name="stackEdge" format="dimension|reference" />
         <attr name="stackAutoPlay" format="boolean"/>
+        <attr name="stackDelay" format="integer"/>
+        <attr name="stackDuration" format="integer"/>
         <attr name="stackModel">
             <flag name="left" value="1"/>
             <flag name="right" value="2"/>
