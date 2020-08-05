@@ -7,7 +7,7 @@
 ![效果图](/images/image_normal.png) ![效果图](/images/image_left.png) ![效果图](/images/image_right.png)
 
 ### Use
-    implementation 'com.uis:stackviewlayout:0.1.0'
+    implementation 'com.uis:stackviewlayout:0.1.1'
 
 ### [老版本](README-StackLayout.md)
 
@@ -20,8 +20,14 @@ stackOffsetX|x方向偏移因子|2dp
 stackPaddingY|y方向偏移距离|10dp
 stackOffsetY|y方向偏移因子|2dp
 stackAutoPlay|自动轮播(looper)|true
+stackDelay|自动轮播延时时间mills|3000
+stackDuration|自动轮播播放时间mills|600
 stackSize|层叠数量(stack size)|3
 stackAspectRatio|宽高比,宽度须有值|0
+
+### Version
+    v0.1.0->初始版本,滑动利用Scroller,支持手动滑动和自动轮播，支持多种布局
+    v0.1.1->fixed 点击后自动轮播失效,增加轮播延时、轮播时间设置
 
 ### License
 
