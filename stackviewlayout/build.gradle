@@ -24,4 +24,4 @@ dependencies{
     compileOnly "androidx.appcompat:appcompat:${androidx}"
 }
 
-//apply from: '../../bintray.gradle'
+//apply from: '../../publish.gradle'
